@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 const base = process.env.PLACE_URL ?? 'http://127.0.0.1:4173';
-const browser = await chromium.launch();
+const browser = await chromium.launch({channel:process.env.PLACE_BROWSER_CHANNEL});
 const context = await browser.newContext({viewport:{width:1440,height:900}});
 const page = await context.newPage();
 const failures = [];
