@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=24" },
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "dev": "node server.mjs",
     "build:arena": "node scripts/build-ui.mjs",
@@ -27,5 +29,9 @@
     "react-dom": "19.2.1",
     "three": "0.181.1",
     "typescript": "5.9.3"
+  },
+  "overrides": {
+    "motion-dom": "12.23.23",
+    "motion-utils": "12.23.6"
   }
 }
