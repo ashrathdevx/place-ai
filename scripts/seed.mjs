@@ -21,18 +21,20 @@ try {
   for (const problem of bank) {
     await transaction(async client => {
       const { rows:[row] } = await client.query(
-        `INSERT INTO problems (slug,title,difficulty,time_limit_ms,memory_limit_mb,statement_md,editorial_md)
-         VALUES ($1,$2,$3,2000,256,$4,$5) ON CONFLICT (slug) DO UPDATE SET
-         title=excluded.title,difficulty=excluded.difficulty,statement_md=excluded.statement_md,editorial_md=excluded.editorial_md RETURNING id`,
-        [problem.slug,problem.title,problem.difficulty,problem.statement,problem.editorial]);
-      for (const [ordinal,[input,expected]] of problem.cases.entries()) {
+        `INSERT INTO problems (slug,title,difficulty,time_limit_ms,memory_limit_mb,statement_md,editorial_md,topics)
+         VALUES ($1,$2,$3,2000,256,$4,$5,$6) ON CONFLICT (slug) DO UPDATE SET
+         title=excluded.title,difficulty=excluded.difficulty,statement_md=excluded.statement_md,editorial_md=excluded.editorial_md,
+         topics=excluded.topics RETURNING id`,
+        [problem.slug,problem.title,problem.difficulty,problem.statement,problem.editorial,problem.topics]);
+      for (const [ordinal,[input,expected,explanation]] of problem.cases.entries()) {
         const prefix = `problems/${problem.slug}/${ordinal + 1}`;
         const keys = [`${prefix}.in`,`${prefix}.out`];
         await Promise.all([input,expected].map((body,index) => s3.send(new PutObjectCommand({ Bucket:bucket, Key:keys[index], Body:body }))));
         await client.query(
-          `INSERT INTO test_cases (problem_id,ordinal,input_url,expected_output_url,is_sample) VALUES ($1,$2,$3,$4,$5)
-           ON CONFLICT (problem_id,ordinal) DO UPDATE SET input_url=excluded.input_url,expected_output_url=excluded.expected_output_url,is_sample=excluded.is_sample`,
-          [row.id,ordinal,...keys,ordinal === 0]);
+          `INSERT INTO test_cases (problem_id,ordinal,input_url,expected_output_url,is_sample,explanation) VALUES ($1,$2,$3,$4,$5,$6)
+           ON CONFLICT (problem_id,ordinal) DO UPDATE SET input_url=excluded.input_url,expected_output_url=excluded.expected_output_url,
+           is_sample=excluded.is_sample,explanation=excluded.explanation`,
+          [row.id,ordinal,...keys,Boolean(explanation) || ordinal === 0,explanation ?? null]);
       }
     });
   }

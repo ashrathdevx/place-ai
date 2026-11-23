@@ -1,0 +1,150 @@
+.indicator {
+  --ink: #315ee4;
+  --track: #dbe5ff;
+  display: inline-grid;
+  position: relative;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  color: var(--ink);
+}
+.indicator i { display: block; font-style: normal; animation-play-state: paused !important; }
+.indicator.is-moving i,
+.indicator.is-moving b { animation-play-state: running !important; }
+.indicator b { animation-play-state: paused !important; }
+.indicator-arc i, .indicator-gradient i {
+  width: 78%; aspect-ratio: 1; border-radius: 50%;
+  border: 2px solid var(--track); border-top-color: var(--ink);
+  animation: load-spin .8s linear infinite;
+}
+.indicator-gradient i {
+  border: 0;
+  background: conic-gradient(var(--track), var(--ink));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+}
+.indicator-bounce-dots, .indicator-typing {
+  display: inline-flex; justify-content: center; gap: 4px;
+}
+.indicator-bounce-dots i, .indicator-typing i, .indicator-dot-grid i {
+  width: 5px; height: 5px; border-radius: 50%; background: currentColor;
+  animation: load-hop .95s calc(var(--index) * .12s - .2s) ease-in-out infinite;
+}
+.indicator-typing i, .indicator-dot-grid i {
+  animation-name: load-breathe;
+}
+.indicator-pulse i {
+  position: absolute; width: 68%; aspect-ratio: 1; border: 2px solid; border-radius: 50%;
+  animation: load-pulse 1.6s calc(var(--index) * -.8s) ease-out infinite;
+}
+.indicator-indeterminate { width: 100%; height: 4px; }
+.indicator-indeterminate, .indicator-liquid, .indicator-skeleton i {
+  overflow: hidden; border-radius: 8px; background: var(--track);
+}
+.indicator-indeterminate i {
+  position: absolute; left: 0; width: 34%; height: 100%; border-radius: inherit; background: currentColor;
+  animation: load-sweep 1.25s ease-in-out infinite;
+}
+.indicator-skeleton {
+  width: 100%; height: auto; align-content: center; justify-items: start; gap: 8px;
+}
+.indicator-skeleton i {
+  width: 100%; height: 7px;
+  background: linear-gradient(100deg, #e8edf6 25%, #f8faff 50%, #e8edf6 75%) 100% 0 / 250% 100%;
+  animation: load-shimmer 1.5s linear infinite;
+}
+.indicator-skeleton i:first-child { width: 46%; height: 10px; }
+.indicator-skeleton i:last-child { width: 73%; }
+.indicator-orbit, .indicator-chase { border: 1px solid var(--track); border-radius: 50%; }
+.indicator-orbit i, .indicator-chase i {
+  position: absolute; inset: 0; animation: load-spin 1.4s calc(var(--index) * -.7s) linear infinite;
+}
+.indicator-orbit i::before, .indicator-chase i::before {
+  content: ''; position: absolute; width: 7px; aspect-ratio: 1; background: currentColor; border-radius: 50%;
+  top: -3px; left: calc(50% - 3.5px);
+}
+.indicator-chase { border-radius: 6px; }
+.indicator-chase i { animation: none; }
+.indicator-chase i::before { top: 0; left: 0; border-radius: 1px; }
+.indicator-chase i::before { animation: load-chase 1.65s calc(var(--index) * -.825s) linear infinite paused; }
+.indicator-chase.is-moving i::before { animation-play-state: running; }
+.indicator-equalizer { display: inline-flex; justify-content: center; gap: 3px; }
+.indicator-equalizer i {
+  width: 3px; height: calc(11px + var(--index) * 2px); border-radius: 2px; background: currentColor;
+  animation: load-level .9s calc(var(--index) * -.18s) ease-in-out infinite;
+}
+.indicator-morph i, .indicator-flip i {
+  width: 66%; aspect-ratio: 1; border-radius: 5px; background: currentColor;
+  animation: load-morph 1.6s ease-in-out infinite;
+}
+.indicator-flip i { animation-name: load-flip; }
+.indicator-liquid { border-radius: 50%; border: 1px solid #bdccf6; }
+.indicator-liquid i {
+  position: absolute; top: 45%; width: 155%; height: 155%; border-radius: 39%;
+  background: currentColor; animation: load-liquid 2.8s ease-in-out infinite;
+}
+.indicator-dot-grid {
+  display: inline-grid; grid-template: repeat(3, 5px) / repeat(3, 5px); place-content: center; gap: 4px;
+}
+.indicator-infinity { width: 52px; }
+.indicator-infinity::before { content: '∞'; color: var(--track); font: 42px/1 system-ui; }
+.indicator-infinity i {
+  position: absolute; top: 17px; left: 7px; width: 6px; aspect-ratio: 1;
+  border-radius: 50%; background: currentColor;
+  offset-path: path('M 0 0 C 0 -13 12 -13 19 0 C 26 13 38 13 38 0 C 38 -13 26 -13 19 0 C 12 13 0 13 0 0');
+  offset-distance: calc(var(--index) * 8%);
+  animation: load-trail 2s calc(var(--index) * -.16s) linear infinite;
+}
+.indicator-infinity i:nth-child(2) { opacity: .68; }
+.indicator-infinity i:nth-child(3) { opacity: .38; }
+.indicator-spokes i {
+  position: absolute; width: 2px; height: 8px; border-radius: 2px; background: currentColor;
+  transform: rotate(calc(var(--index) * 30deg)) translateY(-11px);
+  opacity: calc(.22 + var(--index) * .055);
+  animation: load-spoke 1.2s calc(var(--index) * -.1s) linear infinite;
+}
+.indicator-text { width: auto; }
+.indicator-text i { display: none; }
+.indicator-text b {
+  font-size: .9rem; color: var(--ink);
+  background: linear-gradient(100deg, #234ca6 31%, #6483db 52%, #234ca6 70%) 100% / 230% 100%;
+  background-clip: text; -webkit-text-fill-color: transparent;
+  animation: load-shimmer 1.5s linear infinite;
+}
+.indicator-battery {
+  display: inline-grid; grid-template-columns: repeat(4, 1fr); gap: 2px;
+  width: 40px; height: 22px; padding: 3px; border: 1px solid; border-radius: 4px;
+}
+.indicator-battery::after {
+  content: ''; position: absolute; right: -4px; width: 2px; height: 8px; border-radius: 1px; background: currentColor;
+}
+.indicator-battery i {
+  width: 100%; height: 100%; border-radius: 1px; background: currentColor;
+  opacity: calc(1 - var(--index) * .23);
+  animation: load-block 2s calc(var(--index) * -.18s) steps(1) infinite;
+}
+.indicator-ball i {
+  width: 11px; height: 11px; border-radius: 50%; background: currentColor;
+  animation: load-hop .75s ease-in-out infinite;
+}
+.loading-meter { accent-color: #315ee4; width: 100%; height: 9px; }
+
+@keyframes load-spin { to { transform: rotate(1turn); } }
+@keyframes load-hop { 50% { transform: translateY(-6px); } }
+@keyframes load-breathe { 50% { opacity: .38; transform: scale(.78); } }
+@keyframes load-pulse { from { transform: scale(.4); } to { transform: scale(1.4); opacity: 0; } }
+@keyframes load-sweep { from { transform: translateX(-108%); } to { transform: translateX(305%); } }
+@keyframes load-shimmer { to { background-position: 0 0; } }
+@keyframes load-level { 50% { transform: scaleY(.3); } }
+@keyframes load-morph { 50% { transform: rotate(90deg) scale(.75); border-radius: 50%; } }
+@keyframes load-flip { 50% { transform: perspective(65px) rotateX(180deg); } to { transform: perspective(65px) rotateX(180deg) rotateY(180deg); } }
+@keyframes load-liquid { 50% { top: 22%; transform: rotate(180deg); } to { transform: rotate(360deg); } }
+@keyframes load-trail { to { offset-distance: 100%; } }
+@keyframes load-spoke { 0% { opacity: 1; } to { opacity: .22; } }
+@keyframes load-chase {
+  25% { transform: translateX(24px); } 50% { transform: translate(24px, 24px); } 75% { transform: translateY(24px); }
+}
+@keyframes load-block { 65% { opacity: 1; } 90% { opacity: .23; } }
+@media (prefers-reduced-motion: reduce) {
+  .indicator *, .indicator *::before { animation: none !important; }
+}

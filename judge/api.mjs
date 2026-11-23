@@ -130,9 +130,9 @@ async function stream(req,res,id) {
 async function problemDetail(slug) {
   const { rows:[problem] } = await db.query('SELECT * FROM problems WHERE slug=$1',[slug]);
   if (!problem) throw httpError(404,'Problem not found.');
-  const { rows:samples } = await db.query(`SELECT input_url,expected_output_url FROM test_cases WHERE problem_id=$1 AND is_sample ORDER BY ordinal`,[problem.id]);
+  const { rows:samples } = await db.query(`SELECT input_url,expected_output_url,explanation FROM test_cases WHERE problem_id=$1 AND is_sample ORDER BY ordinal`,[problem.id]);
   return { ...problem,samples:await Promise.all(samples.map(async item => ({
-    input:await readObject(item.input_url),output:await readObject(item.expected_output_url),
+    input:await readObject(item.input_url),output:await readObject(item.expected_output_url),explanation:item.explanation,
   }))) };
 }
 async function contestDetail(slug) {
@@ -177,7 +177,7 @@ export async function handle(req,res,path) {
     }
     if (path === '/api/problems') {
       const user = session(req,res);
-      const { rows } = await db.query(`SELECT p.slug,p.title,p.difficulty,p.time_limit_ms,p.memory_limit_mb,
+      const { rows } = await db.query(`SELECT p.slug,p.title,p.difficulty,p.topics,p.time_limit_ms,p.memory_limit_mb,
         EXISTS (SELECT 1 FROM submissions s WHERE s.user_id=$1 AND s.problem_id=p.id AND s.verdict='AC' AND s.custom_input IS NULL) AS solved
         FROM problems p ORDER BY p.id`,[user]);
       return json(res,200,rows);

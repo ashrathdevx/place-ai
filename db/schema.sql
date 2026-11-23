@@ -25,6 +25,8 @@ CREATE TABLE IF NOT EXISTS test_cases (
   is_sample boolean NOT NULL DEFAULT false,
   UNIQUE (problem_id,ordinal)
 );
+ALTER TABLE problems ADD COLUMN IF NOT EXISTS topics text[] NOT NULL DEFAULT '{}';
+ALTER TABLE test_cases ADD COLUMN IF NOT EXISTS explanation text;
 CREATE TABLE IF NOT EXISTS contests (
   id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   slug text UNIQUE NOT NULL,

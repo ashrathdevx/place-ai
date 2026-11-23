@@ -1,0 +1,121 @@
+function problem({ description, input, output, constraints, ...details }) {
+  return { ...details, statement: [
+    description, '## Input', input, '## Output', output, '## Constraints', constraints,
+  ].join('\n\n') };
+}
+
+export const practiceProblems = [
+  problem({
+    slug: 'shuttle-budget', title: 'Shuttle Budget', difficulty: 'Medium', topics: ['Sliding Window', 'Arrays'],
+    description: 'A shuttle route lists the cost of visiting each stop in order. Choose the longest consecutive stretch of stops whose total cost is at most your budget. You can choose an empty stretch.',
+    input: 'The first line contains n and b, the number of stops and the budget. The second line contains n costs, in route order.',
+    output: 'Print the maximum number of consecutive stops you can visit.',
+    constraints: '1 ≤ n ≤ 200,000\n0 ≤ b ≤ 10¹⁴\n0 ≤ cost at each stop ≤ 10⁹',
+    cases: [
+      ['7 10\n4 2 1 3 6 0 2\n', '4\n', 'The first four stops cost exactly 10. Each stretch of five stops costs more than 10.'],
+      ['5 0\n0 0 2 0 0\n', '2\n', 'The stop costing 2 splits the route into two stretches of two free stops.'],
+      ['1 0\n5\n', '0\n'], ['6 5\n9 1 1 1 1 1\n', '5\n'],
+      ['3 3000000000\n1000000000 1000000000 1000000000\n', '3\n'],
+      [`200000 40000\n${'1 '.repeat(200000).trimEnd()}\n`, '100000\n'],
+    ],
+    editorial: 'Move a right pointer to add one cost at a time. While the sum exceeds the budget, remove costs from the left. Costs are nonnegative, so earlier starting positions cannot give a valid window for this right endpoint once they have been removed. Track the largest remaining window.\n\nTime O(n). Extra space O(1) beyond the input array.',
+  }),
+  problem({
+    slug: 'credit-ledger', title: 'Campus Credit Ledger', difficulty: 'Easy', topics: ['Prefix Sum', 'Arrays'],
+    description: 'A campus ledger records a signed credit adjustment each day. Each request asks for the net credit change across a range of days, including both endpoints.',
+    input: 'The first line contains n and q. The second contains n signed adjustments. Each of the next q lines contains a pair l r denoting a range of days, numbered from 1.',
+    output: 'Print one signed sum per query, in the original query order.',
+    constraints: '1 ≤ n ≤ 200,000\n1 ≤ q ≤ 4,000\n1 ≤ l ≤ r ≤ n\n−10⁹ ≤ each adjustment ≤ 10⁹\nUse 64-bit arithmetic for sums.',
+    cases: [
+      ['5 3\n4 -7 6 2 -1\n1 3\n2 5\n4 4\n', '3\n0\n2\n', 'The first query adds 4 − 7 + 6. The second sums to zero, and the third covers day four alone.'],
+      ['3 2\n-1000000000 -1000000000 -1000000000\n1 3\n2 3\n','-3000000000\n-2000000000\n','The full-range sum is below the minimum signed 32-bit value.'],
+      ['1 2\n0\n1 1\n1 1\n','0\n0\n'], ['4 2\n1 2 3 4\n1 4\n2 3\n','10\n5\n'],
+      [`200000 4000\n${'1 '.repeat(200000).trimEnd()}\n${'1 200000\n'.repeat(4000)}`, '200000\n'.repeat(4000)],
+    ],
+    editorial: 'Build prefix sums with prefix[0] = 0. The adjustment for days l through r is prefix[r] − prefix[l − 1]. Use 64-bit integers in C++.\n\nTime O(n + q). Extra space O(n).',
+  }),
+  problem({
+    slug: 'repair-escalation', title: 'Repair Escalation Queue', difficulty: 'Medium', topics: ['Monotonic Stack', 'Arrays'],
+    description: 'Repair tickets arrive in a fixed order. For each ticket, find the position of the first later ticket whose priority is lower. Equal priorities do not count.',
+    input: 'The first line contains n. The second line contains n integer priorities.',
+    output: 'Print n space-separated positions indexed from 1. Print 0 for a ticket with no later ticket of lower priority.',
+    constraints: '1 ≤ n ≤ 10,000\n1 ≤ each priority ≤ 10⁹',
+    cases: [
+      ['6\n7 7 4 8 3 5\n','3 3 5 5 0 0\n','The first two tickets both point to ticket 3. Ticket 5 is the first lower priority after tickets 3 and 4.'],
+      ['4\n2 2 2 2\n','0 0 0 0\n','All priorities are equal, so every ticket has answer 0.'],
+      ['5\n9 8 7 6 5\n','2 3 4 5 0\n'], ['1\n1000000000\n','0\n'],
+      ['6\n1 2 3 3 4 5\n','0 0 0 0 0 0\n'],
+      [`10000\n${Array.from({length:10000}, (_, i) => i + 1).join(' ')}\n`, `${'0 '.repeat(10000).trimEnd()}\n`],
+    ],
+    editorial: 'Scan from right to left. Pop candidates whose priority is greater than or equal to the current ticket’s. The stack top, if any, is the closest strictly lower priority. Push the current index. A removed candidate is at least as high as a closer ticket and cannot be needed for a later query in the scan.\n\nTime O(n). Extra space O(n).',
+  }),
+  problem({
+    slug: 'lab-bookings', title: 'Laboratory Bookings', difficulty: 'Medium', topics: ['Intervals', 'Sorting'],
+    description: 'Bookings occupy a laboratory over half-open intervals [start, end). Find the total number of minutes when the lab is occupied by at least one booking. Bookings may overlap, touch, or repeat.',
+    input: 'The first line contains n. Each of the following n lines contains one pair start end, measured in minutes relative to an agreed starting point.',
+    output: 'Print the total occupied time in minutes, counting each occupied minute once.',
+    constraints: '1 ≤ n ≤ 200,000\n−10¹² ≤ start < end ≤ 10¹²\nBookings are given in arbitrary order.',
+    cases: [
+      ['5\n7 11\n2 5\n4 8\n14 16\n11 12\n','12\n','The first continuous span is [2, 12), covering 10 minutes. [14, 16) adds two more.'],
+      ['3\n-5 -2\n-5 -2\n-4 -3\n','3\n','The duplicate and nested bookings add no time to [−5, −2).'],
+      ['3\n10 11\n1 2\n4 6\n','4\n'], ['1\n-1000000000000 1000000000000\n','2000000000000\n'],
+      ['4\n0 100\n5 6\n10 20\n100 103\n','103\n'],
+    ],
+    editorial: 'Sort bookings by start time. Maintain the current merged span. If the next start is at most the current end, extend the end if needed. Otherwise add the completed span’s length and start a new span. Include the final span after the loop.\n\nTime O(n log n). Extra space depends on the sorting implementation.',
+  }),
+  problem({
+    slug: 'workshop-capacity', title: 'Workshop Capacity', difficulty: 'Medium', topics: ['Binary Search', 'Greedy'],
+    description: 'A workshop processes jobs in the given order. Each shift takes a consecutive batch of whole jobs, and the sum of job durations in a shift must stay within its time allowance. Find the smallest allowance that lets the workshop finish in at most d shifts.',
+    input: 'The first line contains n and d. The second contains n positive job durations in order.',
+    output: 'Print the minimum time allowance per shift.',
+    constraints: '1 ≤ d ≤ n ≤ 200,000\n1 ≤ each duration ≤ 10⁹\nUse 64-bit arithmetic for totals.',
+    cases: [
+      ['6 3\n8 3 6 2 9 4\n','13\n','With allowance 13, batches can be [8, 3], [6, 2], and [9, 4]. An allowance of 12 requires four shifts.'],
+      ['3 1\n1000000000 1000000000 1000000000\n','3000000000\n','One shift must take all three jobs.'],
+      ['3 3\n4 9 5\n','9\n'], ['1 1\n1\n','1\n'], ['4 2\n2 2 2 2\n','4\n'],
+    ],
+    editorial: 'Search between the largest single job and the sum of all jobs. At a candidate allowance, start a new shift only when the next job would exceed it. Taking the longest possible prefix per shift minimizes the shift count. As the allowance increases, feasibility can only improve, so binary search for the first feasible value.\n\nTime O(n log S) for total duration S. Extra space O(1) beyond the input array.',
+  }),
+  problem({
+    slug: 'trail-beacons', title: 'Trail Beacons', difficulty: 'Medium', topics: ['Graphs', 'Breadth-First Search'],
+    description: 'Several trail checkpoints already have rescue beacons. For each checkpoint, find the fewest trails you must follow to reach any beacon. Trails are undirected and all count equally.',
+    input: 'The first line contains n, m, and k. The second contains k distinct beacon checkpoint numbers. Each of the following m lines contains an undirected edge u v. Checkpoints are numbered from 1.',
+    output: 'Print n space-separated distances in checkpoint order. Print 0 for a checkpoint with a beacon and −1 when no beacon is reachable.',
+    constraints: '1 ≤ k ≤ n ≤ 10,000\n0 ≤ m ≤ 200,000\n1 ≤ u, v ≤ n and u ≠ v\nParallel trails may appear.',
+    cases: [
+      ['7 5 2\n2 6\n1 2\n2 3\n3 4\n4 5\n5 6\n','1 0 1 2 1 0 -1\n','Checkpoint 4 is two trails from either beacon. Checkpoint 7 has no trails.'],
+      ['3 0 3\n1 2 3\n','0 0 0\n','Every checkpoint already has a beacon.'],
+      ['1 0 1\n1\n','0\n'], ['4 4 1\n4\n1 2\n1 2\n2 3\n3 4\n','3 2 1 0\n'],
+      ['5 2 2\n4 5\n1 2\n2 3\n','-1 -1 -1 0 0\n'],
+    ],
+    editorial: 'Initialize every beacon’s distance to zero and enqueue all beacons before starting BFS. A first visit to a checkpoint is from a shortest path to some beacon because the queue processes all smaller distances first. Leave unreached distances at −1.\n\nTime O(n + m). Extra space O(n + m).',
+  }),
+  problem({
+    slug: 'study-rewards', title: 'Study Session Rewards', difficulty: 'Medium', topics: ['Dynamic Programming', 'Arrays'],
+    description: 'A calendar offers a signed reward for each day’s study session. Choose any set of days, provided selected days differ by at least g + 1. You may skip every day.',
+    input: 'The first line contains n and g. The second contains n signed rewards in calendar order.',
+    output: 'Print the maximum total reward obtainable.',
+    constraints: '1 ≤ n ≤ 200,000\n0 ≤ g ≤ n\n−10⁹ ≤ each reward ≤ 10⁹\nUse 64-bit arithmetic for totals.',
+    cases: [
+      ['7 2\n5 10 -10 6 8 -10 5\n','18\n','Days 2 and 5 give 10 + 8. Selecting days 1, 4, and 7 instead gives 16.'],
+      ['4 0\n7 -1 3 2\n','12\n','With no required gap, you can select all positive-reward days.'],
+      ['3 3\n-2 -4 -1\n','0\n'], ['4 2\n6 7 8 2\n','8\n'],
+      ['5 1\n1000000000 6 1000000000 6 1000000000\n','3000000000\n'],
+    ],
+    editorial: 'Let dp[i] be the best reward using the first i days. Either skip day i and keep dp[i − 1], or select it and add its reward to dp[max(0, i − g − 1)]. These choices cover every valid schedule. Start with dp[0] = 0.\n\nTime O(n). Extra space O(n).',
+  }),
+  problem({
+    slug: 'service-rollout', title: 'Service Rollout', difficulty: 'Hard', topics: ['Graphs', 'Topological Sort', 'Dynamic Programming'],
+    description: 'A rollout consists of services with different launch durations. Each service can begin once all its prerequisites finish. Any number of services can run in parallel. Find when the entire rollout finishes, or report that prerequisites form a cycle.',
+    input: 'The first line contains n and m. The second contains n positive durations. Each of the next m lines contains u v, meaning service u must finish before service v begins. Services are numbered from 1.',
+    output: 'Print the earliest possible finish time for all services. Print −1 if some services cannot launch because of a cycle.',
+    constraints: '1 ≤ n ≤ 100,000\n0 ≤ m ≤ 200,000\n1 ≤ each duration ≤ 10⁹\n1 ≤ u, v ≤ n. Repeated prerequisite pairs and self-dependencies may appear.',
+    cases: [
+      ['5 4\n4 7 2 3 6\n1 3\n2 3\n3 5\n4 5\n','15\n','Services 1, 2, and 4 start together. Service 3 finishes at time 9 and service 5 finishes at time 15.'],
+      ['4 3\n1 2 3 4\n1 2\n2 1\n3 4\n','-1\n','Services 1 and 2 each wait for the other, even though services 3 and 4 can finish.'],
+      ['1 1\n9\n1 1\n','-1\n'], ['3 0\n5 2 8\n','8\n'],
+      ['3 3\n1000000000 1000000000 1000000000\n1 2\n1 2\n2 3\n','3000000000\n'],
+    ],
+    editorial: 'Track indegrees and enqueue nodes with no prerequisites. When processing u, update each successor’s earliest start to the maximum of its current value and u’s finish time. Once a successor’s indegree reaches zero, all its prerequisites have contributed. If fewer than n nodes are processed, a dependency cycle exists. Otherwise return the largest finish time.\n\nTime O(n + m). Extra space O(n + m).',
+  }),
+];

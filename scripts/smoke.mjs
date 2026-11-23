@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { bank } from '../judge/problems.mjs';
 
 const base = process.env.PLACE_URL ?? 'http://127.0.0.1:4173';
 const read = async (path, options) => {
@@ -8,9 +9,15 @@ const read = async (path, options) => {
 };
 assert.match(await (await read('/')).text(),/Place AI/);
 assert.match(await (await read('/arena/problems/array-sum')).text(),/Place AI/);
-assert.match(await (await read('/vendor/arena.js')).text(),/Coding Arena/);
+assert.match(await (await read('/arena/motion')).text(),/Place AI/);
+assert.match(await (await read('/vendor/arena.js')).text(),/Bouncing dots/);
 const problems = await (await read('/api/problems')).json();
-assert.equal(problems.length,6);
+assert.deepEqual(problems.map(problem => problem.slug).sort(),bank.map(problem => problem.slug).sort());
+assert.ok(problems.every(problem => problem.topics.length));
+const ledger = await (await read('/api/problems/credit-ledger')).json();
+assert.match(ledger.statement_md,/## Constraints/);
+assert.equal(ledger.samples.length,2);
+assert.ok(ledger.samples.every(sample => sample.explanation && !sample.input_url));
 const detail = await (await read('/api/problems/array-sum')).json();
 assert.equal(detail.samples.length,1);
 assert.equal(detail.samples[0].output.trim(),'15');
@@ -45,19 +52,30 @@ const custom = await judge({language:'cpp',code:'#include <iostream>\nint main()
 assert.equal(custom.output.trim(),'14');
 const history = await (await read('/api/submissions?problem=array-sum',{headers:{Cookie:cookie}})).json();
 assert.equal(history.length,5);
+await judge({slug:'credit-ledger',code:`
+import sys
+it = iter(map(int, sys.stdin.buffer.read().split()))
+n, q = next(it), next(it)
+prefix = [0]
+for _ in range(n):
+    prefix.append(prefix[-1] + next(it))
+for _ in range(q):
+    left, right = next(it), next(it)
+    print(prefix[right] - prefix[left - 1])
+`},'AC');
 const standings = (await (await read('/api/contests/foundations-sprint')).json()).standings;
 assert.equal(standings[0]?.score,1);
 const settingsPage = await (await read('/profile/edit')).text();
 assert.match(settingsPage,/assets\/app\.js/);
 assert.match(await (await read('/assets/profile-settings.js')).text(),/Profile settings/);
 const evidence = await (await read('/api/evidence/arena',{headers:{Cookie:cookie}})).json();
-assert.equal(evidence.solved,1);
-assert.equal(evidence.python,1);
-assert.equal(evidence.accepted,1);
-assert.equal(evidence.graded,4);
-assert.equal(evidence.activity.reduce((sum,day) => sum+day.count,0),4);
+assert.equal(evidence.solved,2);
+assert.equal(evidence.python,2);
+assert.equal(evidence.accepted,2);
+assert.equal(evidence.graded,5);
+assert.equal(evidence.activity.reduce((sum,day) => sum+day.count,0),5);
 const userProblems = await (await read('/api/problems',{headers:{Cookie:cookie}})).json();
-assert.deepEqual(userProblems.filter(problem => problem.solved).map(problem => problem.slug),['array-sum']);
+assert.deepEqual(userProblems.filter(problem => problem.solved).map(problem => problem.slug),['array-sum','credit-ledger']);
 const visitorProblems = await (await read('/api/problems')).json();
 assert.ok(visitorProblems.every(problem => !problem.solved));
 const connections = await (await read('/api/evidence/connections')).json();
