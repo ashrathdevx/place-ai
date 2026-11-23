@@ -2,12 +2,13 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { handleEvidence } from './evidence/connectors.mjs';
 
-const pages = new Set(['/', '/learn', '/practice', '/placements', '/marketplace', '/proof', '/proof/demo', '/profile']);
+const pages = new Set(['/', '/learn', '/practice', '/placements', '/marketplace', '/proof', '/proof/demo', '/profile', '/profile/edit']);
 const assets = new Map([
   ['/assets/app.js', 'text/javascript'],
   ['/assets/data.js', 'text/javascript'],
   ['/assets/site.css', 'text/css'],
   ['/assets/profile.js', 'text/javascript'],
+  ['/assets/profile-settings.js', 'text/javascript'],
   ['/assets/mark.svg', 'image/svg+xml'],
   ['/assets/qr.js', 'text/javascript'],
 ]);

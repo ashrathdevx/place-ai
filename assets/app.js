@@ -1,4 +1,5 @@
-import { activityGrid, attachLiveEvidence, identityDetails, renderPassport } from './profile.js';
+import { activityGrid, attachLiveEvidence, renderPassport } from './profile.js';
+import { openProfileSettings } from './profile-settings.js';
 import { branches, challenges, starterListings, platforms, evidenceTypes } from './data.js';
 
 const icons = {
@@ -40,7 +41,7 @@ const route = location.pathname.replace(/\/$/, '') || '/';
 const navigation = [['/learn','Learn'],['/practice','Practice'],['/placements','Placements'],['/arena','Arena'],['/marketplace','Marketplace'],['/proof','Evidence Engine']];
 const brand = `<a class="brand" href="/" aria-label="Place AI home"><img src="/assets/mark.svg" alt="" width="33" height="33"> Place<span>AI</span></a>`;
 const nav = navigation.map(([link,label]) => `<a href="${link}" ${route === link || route.startsWith(link + '/') ? 'aria-current="page"' : ''}>${label}</a>`).join('');
-document.querySelector('#header').innerHTML = `<div class="wrap header-inner">${brand}<nav id="nav" aria-label="Main navigation">${nav}</nav><a href="/profile" class="button small header-cta">My profile</a><button id="menu" class="button small secondary" type="button" aria-expanded="false" aria-controls="nav">Menu</button></div>`;
+document.querySelector('#header').innerHTML = `<div class="wrap header-inner">${brand}<nav id="nav" aria-label="Main navigation">${nav}</nav><a href="/profile" class="button small header-cta" ${route.startsWith('/profile') ? 'aria-current="page"' : ''}>My profile</a><button id="menu" class="button small secondary" type="button" aria-expanded="false" aria-controls="nav">Menu</button></div>`;
 document.querySelector('#menu').onclick = event => {
   const open = event.currentTarget.getAttribute('aria-expanded') === 'true';
   event.currentTarget.setAttribute('aria-expanded', String(!open));
@@ -356,7 +357,7 @@ function proof() {
 }
 
 function samplePassport() {
-  renderPassport(main,{name:'Synexis',role:'Student developer · CSE',college:'Demo Engineering College',cgpa:'9.1',languages:'C++, Java, Python, SQL',availability:'Open to internships'},profileUI,true);
+  renderPassport(main,{name:'Synexis',role:'Student developer · CSE',college:'Demo Engineering College',cgpa:'9.1',languages:'C++, Java, Python, SQL',username:'synexis',stage:'Student',country:'India',bio:'I build small tools, practice algorithms and document what I learn.',availability:'Open to internships'},profileUI,true);
   main.querySelector('#share').onclick = async () => {
     const url = new URL('/proof/demo', location.origin).href;
     showDialog('Share sample career card', `<p class="muted">${['127.0.0.1','localhost'].includes(location.hostname) ? 'This preview URL opens on this computer. A hosted URL is needed for other devices.' : 'Share this URL in a résumé, portfolio or application.'}</p><label class="form">Sample passport URL<input id="share-url" readonly value="${html(url)}"></label><div id="qr" class="qr"></div>
@@ -383,35 +384,9 @@ function samplePassport() {
 
 const profileUI = { action, avatar, dialog, html, showDialog, stat, validatedUrl };
 function profile() {
-  const getValue = data => String(data ?? '').trim();
   renderPassport(main,state.profile,profileUI);
   const evidenceList = main.querySelector('#profile-evidence');
   const render = () => { evidenceList.innerHTML = state.evidence.map(evidenceRow).join('') || '<p class="muted">Add your first project, certificate or other source of proof.</p>'; };
-  main.querySelector('#edit-profile').onclick = () => {
-    const user = state.profile;
-    showDialog('Edit profile',`<form class="form">
-    ${field('Name','name',user.name,'required maxlength="70"')}${field('College','college',user.college,'maxlength="100"')}
-    ${field('CGPA out of 10','cgpa',user.cgpa,'type="number" min="0" max="10" step="0.01"')}
-    ${field('Target role','role',user.role,'maxlength="70"')}${field('Coding languages','languages',user.languages,'maxlength="100"')}
-    <label>Availability<select name="availability">${['Open to internships','Open to full-time roles','Exploring opportunities','Unavailable'].map(value => `<option ${value === user.availability ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
-    <button class="button">Save profile</button><p role="status"></p></form>`);
-    dialog.querySelector('form').onsubmit = event => {
-      event.preventDefault();
-      const form = event.currentTarget;
-      const fields = Object.fromEntries(new FormData(form));
-      if (!getValue(fields.name)) {
-        form.querySelector('[role="status"]').textContent = 'Enter your name.';
-        return;
-      }
-      state.profile = Object.fromEntries(Object.entries(fields).map(([key,value]) => [key,getValue(value)]));
-      main.querySelector('.profile-sidebar .avatar').outerHTML = avatar(state.profile.name);
-      main.querySelector('#passport-name').textContent = state.profile.name;
-      main.querySelector('#passport-role').textContent = state.profile.role || 'Student developer';
-      main.querySelector('#passport-context').innerHTML = identityDetails(state.profile,profileUI);
-      if (save()) dialog.close();
-      else form.querySelector('[role="status"]').textContent = 'Saved for this session. Browser storage is unavailable.';
-    };
-  };
   const addEvidence = suggestedPlatform => {
     showDialog('Add evidence', `<form class="form">
       <label>Record type<select name="type">${evidenceTypes.map(type => `<option>${type}</option>`).join('')}</select></label>
@@ -463,6 +438,7 @@ const pages = {
   '/proof': ['Evidence Engine', proof],
   '/proof/demo': ['Synexis · Sample Skill Passport', samplePassport],
   '/profile': ['My profile', profile],
+  '/profile/edit': ['Profile settings', () => openProfileSettings(main,state,profileUI,save)],
 };
 const [title, render] = pages[route] ?? pages['/'];
 document.title = `Place AI — ${title}`;

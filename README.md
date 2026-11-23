@@ -100,6 +100,10 @@ Run `npm run dev` for the student site without infrastructure. The arena require
 
 The Compose profile is a local development environment bound to loopback. The worker uses your Docker daemon to launch runners and must be treated as a privileged service. A public judge should use a separate execution host with a managed sandbox boundary, durable identity, rate limiting and private test storage. Replace all local defaults before deployment. Publishing this source on GitHub does not deploy the app.
 
+## Profile settings
+
+Open **My profile → Edit profile** to manage identity, personal details, education and work, career preferences, and showcase visibility. Each section saves independently in this browser. Photos are resized to a square JPEG before saving. Résumé PDFs stay in browser storage and can be downloaded or removed in Career preferences. Contact details, date of birth, postal code and résumé are excluded from the showcase. The profile editor uses the current browser profile, without shared accounts or cross-device synchronization.
+
 ## Evidence Engine
 
 The **Skill Passport** displays judge-recorded Arena statistics and a 12-week activity grid. Students can attach project and assessment sources. Synexis is a fictional sample built from the supplied Python, SQL, GitHub and Java practice examples.

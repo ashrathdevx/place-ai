@@ -1,3 +1,5 @@
+import { profilePortrait } from './profile-settings.js';
+
 const targets = [
   ['github','GitHub','GH','Commit and pull request contributions, plus owned public repositories.'],
   ['codeforces','Codeforces','CF','Public rating and topic counts from the latest 250 submissions.'],
@@ -47,12 +49,23 @@ function sampleConnections(ui) {
      <article class="panel padded"><div class="provider-head"><span class="provider-icon">LC</span><div><h3>LeetCode topics</h3><p>Example Java practice · topics can overlap</p></div><span class="tag">Sample</span></div>${topics(topicCounts,ui)}</article></div>`;
 }
 function shell(user,ui,demo) {
-  return `<div class="wrap page profile-page"><div class="profile-title"><div><p class="eyebrow">Skill Passport</p><h1>${demo ? 'Synexis' : 'My profile'}</h1></div>
-    ${demo ? '<button class="button secondary" id="share">Share sample</button>' : '<button class="button secondary" id="edit-profile">Edit profile</button>'}</div>
+  const title = user.name || 'My profile';
+  const portrait = profilePortrait({...user,photo:user.showPhoto === false ? '' : user.photo},ui);
+  const location = user.showCountry !== false ? user.country : '';
+  const stage = user.showProfessional !== false ? user.stage : '';
+  return `<div class="wrap page profile-page">
+    <div class="panel profile-hero" aria-labelledby="profile-title">
+      <div class="profile-stripes" aria-hidden="true"></div>
+      <div class="profile-hero-body"><div class="profile-photo">${portrait}</div>
+      <div class="profile-hero-copy"><p class="eyebrow">Skill Passport</p><h1 id="profile-title">${ui.html(title)}</h1>
+        ${user.username ? `<p class="profile-username">@${ui.html(user.username)}</p>` : ''}
+        ${user.bio ? `<p class="profile-bio">${ui.html(user.bio)}</p>` : ''}
+        ${stage || location ? `<div class="profile-badges">${[stage,location].filter(Boolean).map(value => `<span class="tag">${ui.html(value)}</span>`).join('')}</div>` : ''}</div>
+      <div class="profile-hero-actions">${demo ? '<button class="button secondary" id="share">Share sample</button>' : ui.action('/profile/edit','Edit profile')}</div></div>
+    </div>
+    <nav class="profile-nav" aria-label="Profile sections"><a href="#overview">Overview</a><a href="#skills">Skills & evidence</a><a href="#connections">Connected platforms</a></nav>
     <div class="profile-grid"><aside class="panel padded profile-sidebar">
-      <div class="identity">${ui.avatar(user.name || 'Place AI')}<div><h2 id="passport-name">${ui.html(user.name || 'Your name')}</h2><p id="passport-role">${ui.html(user.role || 'Student developer')}</p></div></div>
-      <div class="profile-context" id="passport-context">${identityDetails(user,ui)}</div>
-      <nav aria-label="Passport sections"><a href="#overview">Overview</a><a href="#skills">Skills & evidence</a><a href="#connections">Connected platforms</a></nav>
+      <h2>About</h2><div class="profile-context" id="passport-context">${identityDetails(user,ui)}</div>
     </aside><div class="profile-content">
       <section class="panel padded profile-overview" id="overview"><div class="activity-head"><h2>Overview</h2><span class="tag">${demo ? 'Illustrative profile' : 'Your browser session'}</span></div>
         <div class="stats" id="passport-stats">${ui.stat(demo ? '300' : '—',demo ? 'Example practice problems' : 'Solved in Arena')}${ui.stat(demo ? '91%' : '—',demo ? 'Example Python score' : 'Arena acceptance')}${ui.stat(demo ? '18' : '0','Recorded projects')}</div>
@@ -68,9 +81,23 @@ function shell(user,ui,demo) {
         ${demo ? sampleConnections(ui) : '<p id="connection-status" role="status"></p><div class="connections-grid" id="connections-grid"></div>'}
       </section></div></div></div>`;
 }
-export function identityDetails(user,ui) {
-  return [user.college,user.cgpa ? 'CGPA '+user.cgpa : '',user.languages,user.availability].filter(Boolean)
-    .map(value => `<p>${ui.html(value)}</p>`).join('');
+function identityDetails(user,ui) {
+  const rows = [];
+  if (user.showCountry !== false) rows.push(['Country or region',user.country]);
+  if (user.showProfessional !== false) rows.push(
+    ['Career stage',user.stage],['Institution or employer',user.college],['Qualification',user.degree],
+    ['Graduation year',user.graduationYear],['CGPA',user.cgpa],['Coding since',user.codingSince],
+    ['Preferred language',user.preferredLanguage],['Programming languages',user.languages],
+  );
+  if (user.showCareer !== false) rows.push(['Target role',user.role],['Availability',user.availability]);
+  const details = rows.filter(([,value]) => value).map(([label,value]) =>
+    `<div><dt>${label}</dt><dd>${ui.html(value)}</dd></div>`).join('');
+  const links = user.showCareer === false ? '' : [['LinkedIn','linkedin','LinkedIn'],['Portfolio','portfolio']].map(([label,key,provider]) => {
+    const url = ui.validatedUrl(user[key],provider);
+    return url ? `<a class="source-link" href="${ui.html(url)}" target="_blank" rel="noopener noreferrer">${label}</a>` : '';
+  }).join('');
+  return details || links ? `<dl class="profile-facts">${details}</dl><div class="profile-links">${links}</div>`
+    : '<p>Add details in profile settings to fill out your showcase.</p>';
 }
 export function renderPassport(main,user,ui,demo=false) {
   main.innerHTML = shell(user,ui,demo);

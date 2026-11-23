@@ -47,6 +47,9 @@ const history = await (await read('/api/submissions?problem=array-sum',{headers:
 assert.equal(history.length,5);
 const standings = (await (await read('/api/contests/foundations-sprint')).json()).standings;
 assert.equal(standings[0]?.score,1);
+const settingsPage = await (await read('/profile/edit')).text();
+assert.match(settingsPage,/assets\/app\.js/);
+assert.match(await (await read('/assets/profile-settings.js')).text(),/Profile settings/);
 const evidence = await (await read('/api/evidence/arena',{headers:{Cookie:cookie}})).json();
 assert.equal(evidence.solved,1);
 assert.equal(evidence.python,1);
