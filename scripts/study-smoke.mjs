@@ -51,6 +51,7 @@ try {
   }
   await page.getByLabel('Theme',{exact:true}).selectOption('system');
   await link('Start learning').click();
+  await module.waitFor();
   assert.equal(await page.locator('#module-list > li').count(),5);
   assert.match(await module.innerText(),/To do/);
   await link('Continue learning').click();
