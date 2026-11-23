@@ -1,3 +1,4 @@
+import { watchArenaProgress } from './live-progress.js';
 import { activityGrid, attachLiveEvidence, renderPassport } from './profile.js';
 import { openProfileSettings } from './profile-settings.js';
 import { branches, challenges, starterListings, platforms, evidenceTypes } from './data.js';
@@ -38,9 +39,9 @@ const localStatus = (message, stored) => stored ? message : `${message} Browser 
 const main = document.querySelector('main');
 const dialog = document.querySelector('#dialog');
 const route = location.pathname.replace(/\/$/, '') || '/';
-const navigation = [['/learn','Learn'],['/practice','Practice'],['/placements','Placements'],['/arena','Arena'],['/marketplace','Marketplace'],['/proof','Evidence Engine']];
+const navigation = [['/learn','Learn'],['/practice','Practice'],['/placements','Placements'],['/arena','Arena'],['/arena/decode','Decode'],['/marketplace','Marketplace'],['/proof','Evidence Engine']];
 const brand = `<a class="brand" href="/" aria-label="Place AI home"><img src="/assets/mark.svg" alt="" width="33" height="33"> Place<span>AI</span></a>`;
-const nav = navigation.map(([link,label]) => `<a href="${link}" ${route === link || route.startsWith(link + '/') ? 'aria-current="page"' : ''}>${label}</a>`).join('');
+const nav = navigation.map(([link,label]) => `<a href="${link}" ${route === link || (route.startsWith(link + '/') && !navigation.some(([candidate]) => candidate !== link && (route === candidate || route.startsWith(candidate + '/')))) ? 'aria-current="page"' : ''}>${label}</a>`).join('');
 document.querySelector('#header').innerHTML = `<div class="wrap header-inner">${brand}<nav id="nav" aria-label="Main navigation">${nav}</nav><a href="/profile" class="button small header-cta" ${route.startsWith('/profile') ? 'aria-current="page"' : ''}>My profile</a><button id="menu" class="button small secondary" type="button" aria-expanded="false" aria-controls="nav">Menu</button></div>`;
 document.querySelector('#menu').onclick = event => {
   const open = event.currentTarget.getAttribute('aria-expanded') === 'true';
@@ -66,14 +67,14 @@ function home() {
     ['spark','Learn','Find a roadmap','Get a branch-specific plan and see which skills to work on next.','/learn'],
     ['code','Build','Practice and build','Solve mini challenges and turn your projects into portfolio evidence.','/practice'],
     ['bag','Get placed','Prepare for interviews','Track application prep and share your work with recruiters.','/placements'],
-    ['shop','Earn','Explore the marketplace','Browse student-made notes, projects, templates and services.','/marketplace'],
+    ['shop','Marketplace','Explore student resources','Browse sample resources and draft your own listing.','/marketplace'],
   ];
   main.innerHTML = `
     <section class="hero"><div class="hero-grid" aria-hidden="true"></div><div class="wrap hero-inner">
       <div class="hero-copy"><p class="eyebrow"><span class="dot"></span> Placement preparation for engineering students</p>
         <h1>Show what<br>you can <em>do.</em></h1>
         <p class="lede">Solve problems, build projects and collect the evidence behind your skills in one Skill Passport.</p>
-        <div class="actions">${action('/profile','Build your passport')}${action('/arena','Explore the arena','secondary')}</div>
+        <div class="actions">${action('/profile','Build your passport')}${action('/arena/decode','Try Decode','secondary')}</div>
       </div>
       <div class="hero-art"><span class="orbit orbit-one" aria-hidden="true"></span><span class="orbit orbit-two" aria-hidden="true"></span>${demoCard()}</div>
     </div></section>
@@ -82,7 +83,7 @@ function home() {
       <div class="journey-grid">${steps.map(([symbol, label, title, text, link]) => `<a class="panel journey-card spotlight" href="${link}"><span class="tile-icon">${icon(symbol)}</span><span class="step-label">${label}</span><h3>${title}</h3><p>${text}</p></a>`).join('')}</div>
     </section>
     <section class="wrap home-proof"><div class="panel proof-callout"><div><p class="eyebrow">${icon('shield')} Evidence Engine</p><h2>Give every skill<br>something to show.</h2><p>See what you solved, what you shipped and where each record came from.</p>${action('/proof','Explore Evidence Engine','secondary')}</div><ul class="proof-points"><li>${icon('code')} <div><strong>Practice results</strong><span>Challenge outcomes and assessment history</span></div></li><li>${icon('layers')} <div><strong>Projects and experience</strong><span>Portfolio work, internships and credentials</span></div></li><li>${icon('link')} <div><strong>External sources</strong><span>GitHub, LinkedIn and coding profiles</span></div></li></ul></div>
-    <div class="landing-pipeline"><div class="pipeline-copy"><p class="eyebrow">Coding Arena</p><h2>Run code. See your verdict live.</h2><p>Choose a DSA problem, write C++ or Python, and follow the judge from queue to verdict.</p>${action('/arena','Enter the arena','secondary')}</div><div class="canvas" aria-hidden="true" id="landing-graph"></div></div></section>`;
+    <div class="landing-pipeline"><div class="pipeline-copy"><h2>Debug real code.</h2><p>Start with a buggy Python program. Run it, fix the logic, and add the accepted result to your Skill Passport.</p>${action('/arena/decode','Open Decode','secondary')}</div><div class="canvas" aria-hidden="true" id="landing-graph"></div></div></section>`;
   const graph = document.querySelector('#landing-graph');
   let disposeGraph;
   let active = true;
@@ -164,14 +165,14 @@ function practice() {
     <div class="practice-grid"><section class="panel practice-library" aria-labelledby="challenge-title">
       <div class="practice-controls"><h2 id="challenge-title">Challenge library</h2>
         <div class="practice-filters"><label>Search<input type="search" id="practice-search" placeholder="Search challenges"></label>
-        <label>Branch<select id="practice-branch">${branchOptions(state.branch)}</select></label>
+        <label>Branch<select id="practice-branch"><option value="">All branches</option>${branchOptions()}</select></label>
         <label>Status<select id="practice-completion"><option value="all">All statuses</option><option value="todo">To do</option><option value="done">Completed</option></select></label></div>
         <div id="practice-types" class="chips" role="group" aria-label="Challenge type"></div></div>
       <div id="challenges" class="challenge-list"></div><p class="practice-count" id="practice-count" role="status"></p></section>
       <aside class="practice-sidebar"><section class="panel padded"><p class="eyebrow">Your progress</p><h2 id="practice-status"></h2>
         <progress id="practice-progress" aria-label="Completed practice challenges"></progress>
         <p>Correct answers add a record to your Skill Passport.</p>${action('/profile','View profile','secondary small')}</section>
-      <section class="panel padded"><p class="eyebrow">Coding problems</p><h2>Practice with a judge</h2><p>Submit C++ or Python and see how your code performs on the test cases.</p>${action('/arena#problems','Browse problems','secondary small')}</section></aside>
+      <section class="panel padded"><h2>Fix a logic bug</h2><p>Choose from 30 runnable Python challenges in Decode.</p>${action('/arena/decode','Browse Decode challenges','secondary small')}</section></aside>
     </div></div>`;
   const branch = main.querySelector('#practice-branch');
   const search = main.querySelector('#practice-search');
@@ -180,7 +181,7 @@ function practice() {
   const list = main.querySelector('#challenges');
   let category = '';
   const render = () => {
-    const items = challenges.filter(item => item.branch === branch.value);
+    const items = challenges.filter(item => !branch.value || item.branch === branch.value);
     const done = items.filter(item => state.completed[item.id]).length;
     const progress = main.querySelector('#practice-progress');
     progress.max = items.length || 1;
@@ -202,7 +203,7 @@ function practice() {
     }).join('') || '<p class="practice-empty">No challenges match these filters.</p>';
   };
   const renderTypes = () => {
-    const options = [...new Set(challenges.filter(item => item.branch === branch.value).map(item => item.type))];
+    const options = [...new Set(challenges.filter(item => !branch.value || item.branch === branch.value).map(item => item.type))];
     types.innerHTML = ['',...options].map(type => `<button class="chip" data-type="${type}" aria-pressed="${type === category}">${type || 'All challenges'}</button>`).join('');
   };
   branch.onchange = () => { category = ''; renderTypes(); render(); };
@@ -246,7 +247,7 @@ function practice() {
 
 function placements() {
   const tasks = ['Complete a technical practice set','Write a walkthrough of your strongest project','Update your résumé with evidence links','Rehearse an introduction and a behavioral answer','Prepare questions for the interviewer'];
-  main.innerHTML = `<div class="wrap page">${sectionIntro('Get placed','Show up ready.','Prepare for internships and campus placements with a checklist and a record of the work you can show.')}
+  main.innerHTML = `<div class="wrap page">${sectionIntro('Get placed','Placement preparation','Use this checklist for interviews and application materials. Progress is saved in this browser.')}
     <div class="workspace"><section class="panel padded"><h2>Placement checklist</h2><p role="status" class="green" id="prep-progress"></p><div class="checkbox-group">${tasks.map((task, index) => `<label><input type="checkbox" data-task="${index}" ${state.placement[index] ? 'checked' : ''}> ${task}</label>`).join('')}</div></section>
     <section class="panel padded"><p class="eyebrow">Application materials</p><h2>Share your strongest work</h2><p class="muted">Add a project, résumé or internship record to your Skill Passport. Use a project walkthrough to explain what you built and what you learned.</p><div class="actions">${action('/profile','Update my profile')}${action('/practice','Practice questions','secondary')}</div></section></div></div>`;
   const progress = (stored = true) => {
@@ -263,7 +264,7 @@ function placements() {
 function marketplace() {
   const categories = ['All categories','Notes','Projects','Templates','Resources','Services'];
   const categoryOptions = (choices) => choices.map(category => `<option>${category}</option>`).join('');
-  main.innerHTML = `<div class="wrap page">${sectionIntro('Earn','The Student Marketplace.','Explore student-made resources and draft a listing for something you’ve built.')}
+  main.innerHTML = `<div class="wrap page">${sectionIntro('Student resources','Marketplace','Browse sample listings and save your own draft in this browser.')}
     <div class="toolbar"><label>Category<select id="category">${categoryOptions(categories)}</select></label><label>Engineering branch<select id="market-branch">${branchOptions('All branches',['All branches'])}</select></label>
     <label class="toggle"><input type="checkbox" id="saved-only"> Saved only</label><button class="button" id="new-listing">Draft a listing</button></div><p id="status" class="green" role="status"></p><div id="listings" class="cards"></div></div>`;
   const category = main.querySelector('#category');
@@ -273,7 +274,7 @@ function marketplace() {
   const render = () => {
     const items = [...state.listings, ...starterListings].filter(item =>
       (category.value === 'All categories' || item.category === category.value)
-      && (branch.value === 'All branches' || item.branch === branch.value || item.branch === 'All branches')
+      && (branch.value === 'All branches' || !branch.value || item.branch === branch.value || item.branch === 'All branches')
       && (!savedOnly.checked || state.savedListings.includes(item.id)));
     list.innerHTML = items.map(item => `<article class="panel padded">
       <div class="row"><span class="tag">${html(item.category)} · ${html(item.branch)}</span><span class="muted">${item.draft ? 'Your draft' : 'Sample'}</span></div>
@@ -340,20 +341,33 @@ const evidenceRow = (item) => `<article class="evidence-row"><div class="tile-ic
   ${validatedUrl(item.url, item.platform) ? `<a href="${html(validatedUrl(item.url, item.platform))}" target="_blank" rel="noopener noreferrer">Open source</a>` : ''}</div><span class="tag">${html(item.status)}</span></article>`;
 
 function proof() {
-  const evidence = [...evidenceFromPractice(), ...state.evidence].sort((left,right) => right.date.localeCompare(left.date));
+  const localEvidence = [...evidenceFromPractice(), ...state.evidence];
+  let decoded = [];
+  let selected = 'All';
   main.innerHTML = `<div class="wrap page">${sectionIntro('Evidence Engine','Build a Skill Passport.','Give recruiters a single place to see your practice results, projects, credentials and original sources.')}
-    <div class="workspace"><section class="panel padded"><h2>Your evidence</h2><p class="muted">Practice results and records saved in this browser.</p><div class="chips" aria-label="Filter evidence">
+    <div class="workspace"><section class="panel padded"><h2>Your evidence</h2><p class="muted">Accepted Decode fixes and records saved in this browser.</p><p id="judge-evidence-status" role="status"></p><div class="chips" aria-label="Filter evidence">
     ${['All','Internal','External'].map((source,index) => `<button class="chip" data-source="${source}" aria-pressed="${index === 0}">${source}</button>`).join('')}</div><div id="evidence-list" aria-live="polite"></div>${action('/profile','Add evidence','secondary')}</section>
     <section class="panel padded"><p class="eyebrow">Sample Skill Passport</p><h2>See what a recruiter sees.</h2><p class="muted">Open the example to see a career card, skill scores and an evidence breakdown.</p>${action('/proof/demo','View sample passport')}</section></div></div>`;
   const render = source => {
+    const evidence = [...decoded,...localEvidence].sort((left,right) => right.date.localeCompare(left.date));
     const items = source === 'All' ? evidence : evidence.filter(item => item.source === source);
-    main.querySelector('#evidence-list').innerHTML = items.map(evidenceRow).join('') || '<p class="muted">No evidence in this view yet.</p>';
+    main.querySelector('#evidence-list').innerHTML = items.map(item => item.slug
+      ? `<article class="evidence-row"><span class="tile-icon">${icon('code')}</span><div><h3><a href="/arena/problems/${encodeURIComponent(item.slug)}">${html(item.title)}</a></h3>
+        <p>Decode · ${html(item.detail)}</p></div><span class="tag">Accepted</span></article>` : evidenceRow(item)).join('')
+      || '<p class="muted">No evidence in this view yet.</p>';
   };
   main.querySelectorAll('[data-source]').forEach(button => button.onclick = () => {
     main.querySelectorAll('[data-source]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
-    render(button.dataset.source);
+    selected = button.dataset.source;
+    render(selected);
   });
-  render('All');
+  render(selected);
+  const status = main.querySelector('#judge-evidence-status');
+  watchArenaProgress(({recent_decoded = []}) => {
+    const next = recent_decoded.map(item => ({...item,date:item.accepted_at,source:'Internal',detail:item.difficulty}));
+    if (JSON.stringify(decoded) !== JSON.stringify(next)) { decoded = next; render(selected); }
+    status.textContent = '';
+  },() => { status.textContent = 'Live judge records are temporarily unavailable.'; });
 }
 
 function samplePassport() {

@@ -1,5 +1,6 @@
 import { createHmac, randomUUID, randomBytes, timingSafeEqual } from 'node:crypto';
 import { getProblemDecoding } from './problem-decoding.mjs';
+import { catalogBySlug, fallbackCatalog } from './public-catalog.mjs';
 import { db, enqueue, readObject, transaction } from './services.mjs';
 
 const signingKey = process.env.SESSION_SECRET || randomBytes(32);
@@ -54,8 +55,11 @@ async function submit(req,res) {
   const user = session(req,res);
   const id = randomUUID();
   await transaction(async client => {
-    const { rows:[problem] } = await client.query('SELECT id FROM problems WHERE slug=$1',[slug]);
+    const { rows:[problem] } = await client.query('SELECT id,kind FROM problems WHERE slug=$1',[slug]);
     if (!problem) throw httpError(404,'Problem not found.');
+    if (problem.kind === 'decode' && (language !== 'python' || contest)) {
+      throw httpError(400,'Decode challenges use Python in the practice workspace.');
+    }
     let contestId = null;
     if (contest && customInput === undefined) {
       const { rows:[result] } = await client.query(`SELECT c.id FROM contests c JOIN contest_problems p ON p.contest_id=c.id
@@ -161,16 +165,25 @@ export async function handle(req,res,path) {
     if (streamId) return await stream(req,res,streamId);
     if (path === '/api/evidence/arena') {
       const user = session(req,res);
-      const { rows:[metrics] } = await db.query(`SELECT count(DISTINCT problem_id) FILTER (WHERE verdict='AC')::int AS solved,
+      const { rows:[metrics] } = await db.query(`SELECT count(DISTINCT problem_id) FILTER (WHERE verdict='AC' AND p.kind='practice')::int AS solved,
+        count(DISTINCT problem_id) FILTER (WHERE verdict='AC' AND p.kind='decode')::int AS decoded,
+        count(DISTINCT problem_id) FILTER (WHERE verdict='AC' AND p.kind='decode' AND p.difficulty='Easy')::int AS decoded_easy,
+        count(DISTINCT problem_id) FILTER (WHERE verdict='AC' AND p.kind='decode' AND p.difficulty='Medium')::int AS decoded_medium,
+        count(DISTINCT problem_id) FILTER (WHERE verdict='AC' AND p.kind='decode' AND p.difficulty='Hard')::int AS decoded_hard,
+        (SELECT count(*)::int FROM problems WHERE kind='decode') AS decode_total,
         count(DISTINCT problem_id) FILTER (WHERE verdict='AC' AND language='python')::int AS python,
         count(DISTINCT problem_id) FILTER (WHERE verdict='AC' AND language='cpp')::int AS cpp,
         count(*) FILTER (WHERE verdict='AC')::int AS accepted,
         count(*) FILTER (WHERE verdict IN ('AC','WA','CE','RE','TLE','MLE'))::int AS graded
-        FROM submissions WHERE user_id=$1 AND custom_input IS NULL`,[user]);
+        FROM submissions s JOIN problems p ON p.id=s.problem_id WHERE s.user_id=$1 AND s.custom_input IS NULL`,[user]);
       const { rows:activity } = await db.query(`SELECT (created_at AT TIME ZONE 'UTC')::date::text AS date, count(*)::int AS count
         FROM submissions WHERE user_id=$1 AND custom_input IS NULL AND created_at >= now()-interval '83 days'
         GROUP BY 1 ORDER BY 1`,[user]);
-      return json(res,200,{...metrics,activity});
+      const { rows:recent_decoded } = await db.query(`SELECT p.slug,p.title,p.difficulty,min(s.created_at) AS accepted_at
+        FROM submissions s JOIN problems p ON p.id=s.problem_id
+        WHERE s.user_id=$1 AND p.kind='decode' AND s.verdict='AC' AND s.custom_input IS NULL
+        GROUP BY p.id ORDER BY accepted_at DESC LIMIT 30`,[user]);
+      return json(res,200,{...metrics,activity,recent_decoded});
     }
     if (path === '/api/session') {
       session(req,res);
@@ -178,15 +191,25 @@ export async function handle(req,res,path) {
     }
     if (path === '/api/problems') {
       const user = session(req,res);
-      const { rows } = await db.query(`SELECT p.slug,p.title,p.difficulty,p.topics,p.time_limit_ms,p.memory_limit_mb,
+      const { rows } = await db.query(`SELECT p.slug,p.title,p.difficulty,p.kind,p.topics,p.time_limit_ms,p.memory_limit_mb,
         EXISTS (SELECT 1 FROM submissions s WHERE s.user_id=$1 AND s.problem_id=p.id AND s.verdict='AC' AND s.custom_input IS NULL) AS solved
         FROM problems p ORDER BY p.id`,[user]);
       return json(res,200,rows);
     }
     if (slug) {
       const detail = await problemDetail(slug);
-      if (new URL(req.url,'http://localhost').searchParams.has('contest')) delete detail.editorial_md;
-      else detail.decoding = getProblemDecoding(slug,detail.difficulty);
+      if (detail.kind === 'decode') {
+        const user = session(req,res);
+        const { rows:[{solved}] } = await db.query(`SELECT EXISTS (SELECT 1 FROM submissions
+          WHERE user_id=$1 AND problem_id=$2 AND verdict='AC' AND custom_input IS NULL) AS solved`,[user,detail.id]);
+        detail.starter = catalogBySlug.get(slug)?.starter;
+        detail.editorial_locked = !solved;
+        if (!solved) delete detail.editorial_md;
+      } else if (new URL(req.url,'http://localhost').searchParams.has('contest')) {
+        delete detail.editorial_md;
+      } else {
+        detail.decoding = getProblemDecoding(slug,detail.difficulty);
+      }
       return json(res,200,detail);
     }
     if (path === '/api/contests') {
@@ -204,6 +227,9 @@ export async function handle(req,res,path) {
     return json(res,404,{error:'API route not found.'});
   } catch (error) {
     if (!error.status) console.error('Arena request failed:',error.message);
+    const fallback = !error.status && !res.headersSent && req.method === 'GET'
+      ? fallbackCatalog(path,new URL(req.url,'http://localhost').searchParams) : undefined;
+    if (fallback) return json(res,200,fallback);
     if (!res.headersSent) json(res,error.status ?? 503,{error:error.status ? error.message : 'The arena is temporarily unavailable.'});
     else res.end();
   }

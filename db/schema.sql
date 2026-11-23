@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS test_cases (
   is_sample boolean NOT NULL DEFAULT false,
   UNIQUE (problem_id,ordinal)
 );
+ALTER TABLE problems ADD COLUMN IF NOT EXISTS kind text NOT NULL DEFAULT 'practice' CHECK (kind IN ('practice','decode'));
 ALTER TABLE problems ADD COLUMN IF NOT EXISTS topics text[] NOT NULL DEFAULT '{}';
 ALTER TABLE test_cases ADD COLUMN IF NOT EXISTS explanation text;
 CREATE TABLE IF NOT EXISTS contests (
@@ -70,3 +71,4 @@ CREATE TABLE IF NOT EXISTS submissions (
 CREATE INDEX IF NOT EXISTS submission_history ON submissions(user_id,problem_id,created_at DESC);
 CREATE INDEX IF NOT EXISTS contest_submission_history ON submissions(contest_id,user_id,problem_id,created_at,id);
 CREATE INDEX IF NOT EXISTS submission_unfinished ON submissions(created_at) WHERE verdict IS NULL;
+CREATE INDEX IF NOT EXISTS submission_acceptances ON submissions(user_id,problem_id) WHERE verdict='AC' AND custom_input IS NULL;

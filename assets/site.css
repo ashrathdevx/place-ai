@@ -200,3 +200,17 @@ dialog{border:1px solid #d7e2f5;border-radius:15px;color:var(--text);background:
   .settings-fields { grid-template-columns:minmax(0,1fr); }
   .settings-card header,.settings-body,.settings-card footer { padding-inline:14px; }
 }
+
+.passport-decode { margin-block: 12px; padding: 12px 0; border-block: 1px solid var(--border); }
+.passport-decode-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 14px; justify-content: space-between; }
+.passport-decode-head a { color: var(--blue); font-size: var(--type-compact); }
+.passport-decode p { margin-block: 4px 7px; font-size: var(--type-compact); }
+@media (min-width: 761px) and (max-width: 970px) {
+  .header-inner nav { gap: 10px; }
+  .header-inner { gap: 12px; }
+}
+.passport-decode-list { list-style: none; padding: 0; margin: 6px 0 0; }
+.passport-decode-list li { display: flex; justify-content: space-between; gap: 12px; padding-block: 5px; font-size: var(--type-compact); }
+.passport-decode-list a { color: var(--blue); }
+.passport-decode-list span { color: var(--muted); }
+#judge-evidence-status { font-size: var(--type-compact); }

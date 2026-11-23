@@ -1,3 +1,4 @@
+import { watchArenaProgress } from './live-progress.js';
 import { profilePortrait } from './profile-settings.js';
 
 const targets = [
@@ -91,7 +92,8 @@ function shell(user,ui,demo) {
     <div class="profile-content">
       <section class="panel profile-overview" id="overview" aria-label="Coding overview">
         ${demo ? '<p class="sample-label">Sample data</p>' : ''}
-        <div class="stats" id="passport-stats">${ui.stat(demo ? '300' : '—',demo ? 'Practice problems' : 'Arena solved')}${ui.stat(demo ? '91%' : '—',demo ? 'Python score' : 'Acceptance rate')}${ui.stat(demo ? '18' : '0','Projects')}</div>
+        <div class="stats" id="passport-stats">${ui.stat(demo ? '300' : '—',demo ? 'Practice problems' : 'Arena solved')}${ui.stat(demo ? '91%' : '—',demo ? 'Python score' : 'Problems decoded')}${ui.stat(demo ? '18' : '0','Projects')}</div>
+        ${demo ? '' : '<section class="passport-decode" id="passport-decode" aria-label="Decode progress"><h2>Decode progress</h2><p>Loading judge statistics…</p></section>'}
         <div id="passport-activity">${activityGrid(demo ? sampleDays : [],demo)}</div>
       </section>
       <section id="skills"><div class="profile-section-heading"><h2>Skills and evidence</h2>${demo ? '' : '<button class="button secondary small" id="add-evidence">Add evidence</button>'}</div>
@@ -131,7 +133,15 @@ export async function attachLiveEvidence(main,state,ui) {
   let arena = null;
   const liveStats = () => {
     const projects = state.evidence.filter(item => ['Major project','Minor project'].includes(item.type)).length;
-    main.querySelector('#passport-stats').innerHTML = ui.stat(format(arena?.solved),'Arena solved')+ui.stat(acceptedRate(arena ?? {}),'Acceptance rate')+ui.stat(format(projects),'Projects');
+    main.querySelector('#passport-stats').innerHTML = ui.stat(format(arena?.solved),'Arena solved')+
+      ui.stat(format(arena?.decoded),'Problems decoded')+ui.stat(format(projects),'Projects');
+    const decode = main.querySelector('#passport-decode');
+    decode.innerHTML = arena ? `<div class="passport-decode-head"><h2>Decode progress</h2><a href="/arena/decode">Open Decode →</a></div>
+      <p>${format(arena.decoded)} of ${format(arena.decode_total)} challenges decoded · ${acceptedRate(arena)} acceptance across judged submissions</p>
+      ${metricList([['Easy',arena.decoded_easy],['Medium',arena.decoded_medium],['Hard',arena.decoded_hard]],ui.stat)}
+      ${arena.recent_decoded?.length ? `<ul class="passport-decode-list">${arena.recent_decoded.slice(0,3).map(item =>
+        `<li><a href="/arena/problems/${encodeURIComponent(item.slug)}">${ui.html(item.title)}</a><span>${ui.html(item.difficulty)}</span></li>`).join('')}</ul>` : ''}`
+      : '<div class="passport-decode-head"><h2>Decode progress</h2><a href="/arena/decode">Open Decode →</a></div><p>Live judge statistics are unavailable.</p>';
     const records = (skill,type) => state.evidence.filter(item => item.skill === skill && item.type === type).length;
     main.querySelector('#passport-skills').innerHTML =
       subject('Python',[
@@ -212,9 +222,12 @@ export async function attachLiveEvidence(main,state,ui) {
   evidenceRequest('connections').then(data => { settings = data; render(); }).catch(() => {
     if (!status.textContent) status.textContent = 'Live imports require the running Place AI server.';
   });
-  evidenceRequest('arena').then(data => {
+  watchArenaProgress(data => {
+    const previous = arena;
     arena = data;
-    liveStats();
-    main.querySelector('#passport-activity').innerHTML = activityGrid(data.activity);
-  }).catch(() => {});
+    if (JSON.stringify(previous) !== JSON.stringify(data)) {
+      liveStats();
+      main.querySelector('#passport-activity').innerHTML = activityGrid(data.activity);
+    }
+  });
 }

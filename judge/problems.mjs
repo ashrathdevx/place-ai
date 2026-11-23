@@ -1,3 +1,4 @@
+import { decodeChallenges } from './decode-challenges.mjs';
 import { practiceProblems } from './practice-problems.mjs';
 
 export const bank = [
@@ -26,4 +27,5 @@ export const bank = [
     editorial:'Push opening brackets on a stack. For every closing bracket, require a matching opener at the top of the stack. At the end the stack must be empty.',
     cases:[['{[()]}\n','YES\n','Every closing bracket matches the most recent unmatched opening bracket.'],['([)]\n','NO\n'],['(\n','NO\n']] },
   ...practiceProblems,
+  ...decodeChallenges,
 ];

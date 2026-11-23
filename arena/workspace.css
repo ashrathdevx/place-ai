@@ -208,3 +208,28 @@ body.working { height: 100vh; height: 100dvh; overflow: hidden; }
   .arena-card { padding: 12px; }
   .problem-columns, .problem-row { grid-template-columns: 16px minmax(0, 1fr) 57px 12px; gap: 5px; padding-inline: 5px; }
 }
+
+.decode-flow { margin: 10px 0 0; padding-left: 1.25rem; }
+.decode-flow li + li { margin-top: 6px; }
+.decode-callout {
+  margin: 0 0 16px; padding: 10px 12px; border: 1px solid #d8e3fa;
+  border-radius: 8px; background: #f3f7ff; color: #294268; font-size: var(--type-compact);
+}
+.editor-chrome { background: linear-gradient(#fbfcff, #f1f4fa); }
+.editor-file { white-space: nowrap; font-weight: 650; font-size: var(--type-compact); }
+.editor-file small { margin-inline-start: 6px; opacity: .72; font-weight: 500; }
+.editorial-document {
+  padding: clamp(14px, 2.4vw, 28px); border: 1px solid var(--arena-line);
+  border-radius: 12px; background: #fff; box-shadow: 0 8px 28px #2034540c;
+}
+.editorial-document header { border-bottom: 1px solid var(--arena-line); padding-bottom: 16px; margin-bottom: 16px; }
+.editorial-document header span { color: var(--arena-muted); font-size: var(--type-label); }
+.editorial-document header p { font-size: var(--type-compact); margin-top: 6px; }
+.editorial-document h2 { margin: 18px 0 5px; font-size: var(--type-subhead); }
+.editorial-document > p + p { margin-top: 12px; }
+.console-caption { font-size: var(--type-label); margin: 8px 0 3px; color: var(--arena-muted); }
+.solver-actions .text-button:disabled { opacity: .45; }
+@media (max-width: 420px) {
+  .editor-file small { display: none; }
+  .editor-chrome { padding-inline: 7px; }
+}

@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { CreateBucketCommand, HeadBucketCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { bank } from '../judge/problems.mjs';
+import { ordinalIsSample } from '../judge/public-catalog.mjs';
 import { db, queue, s3, bucket, transaction } from '../judge/services.mjs';
 
 try {
@@ -21,11 +22,11 @@ try {
   for (const problem of bank) {
     await transaction(async client => {
       const { rows:[row] } = await client.query(
-        `INSERT INTO problems (slug,title,difficulty,time_limit_ms,memory_limit_mb,statement_md,editorial_md,topics)
-         VALUES ($1,$2,$3,2000,256,$4,$5,$6) ON CONFLICT (slug) DO UPDATE SET
+        `INSERT INTO problems (slug,title,difficulty,time_limit_ms,memory_limit_mb,statement_md,editorial_md,topics,kind)
+         VALUES ($1,$2,$3,2000,256,$4,$5,$6,$7) ON CONFLICT (slug) DO UPDATE SET
          title=excluded.title,difficulty=excluded.difficulty,statement_md=excluded.statement_md,editorial_md=excluded.editorial_md,
-         topics=excluded.topics RETURNING id`,
-        [problem.slug,problem.title,problem.difficulty,problem.statement,problem.editorial,problem.topics]);
+         topics=excluded.topics,kind=excluded.kind RETURNING id`,
+        [problem.slug,problem.title,problem.difficulty,problem.statement,problem.editorial,problem.topics,problem.kind ?? 'practice']);
       for (const [ordinal,[input,expected,explanation]] of problem.cases.entries()) {
         const prefix = `problems/${problem.slug}/${ordinal + 1}`;
         const keys = [`${prefix}.in`,`${prefix}.out`];
@@ -34,7 +35,7 @@ try {
           `INSERT INTO test_cases (problem_id,ordinal,input_url,expected_output_url,is_sample,explanation) VALUES ($1,$2,$3,$4,$5,$6)
            ON CONFLICT (problem_id,ordinal) DO UPDATE SET input_url=excluded.input_url,expected_output_url=excluded.expected_output_url,
            is_sample=excluded.is_sample,explanation=excluded.explanation`,
-          [row.id,ordinal,...keys,Boolean(explanation) || ordinal === 0,explanation ?? null]);
+          [row.id,ordinal,...keys,ordinalIsSample(ordinal,explanation),explanation ?? null]);
       }
     });
   }

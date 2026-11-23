@@ -12,7 +12,7 @@ Requires Docker Desktop or Docker Engine with the Compose plugin. The first run 
 docker compose up --build
 ```
 
-Open [Place AI](http://127.0.0.1:4173) or go straight to the [Coding Arena](http://127.0.0.1:4173/arena). The seed service provisions 14 problems, worked examples and hidden cases and a seven-day starter contest on its first run.
+Open [Place AI](http://127.0.0.1:4173) or go straight to the [Coding Arena](http://127.0.0.1:4173/arena). The seed service provisions 14 practice problems, 30 Python Decode challenges, and a seven-day starter contest on its first run.
 
 To try the judge, open **Array Sum**, choose Python 3 and submit the following:
 
@@ -32,6 +32,8 @@ docker compose down
 
 The seed command can be rerun. It also upgrades older Arena databases to include topic labels and example explanations. Compose volumes retain the database, queue and object fixtures when stopping the stack.
 
+Open [Decode](http://127.0.0.1:4173/arena/decode) to see all 30 buggy programs by default. Open a challenge, run the prefilled example, compare actual and expected output, edit the starter, then submit against the judge. An accepted fix unlocks the editorial and updates the difficulty breakdown and accepted challenge list on the Skill Passport. The Evidence Engine shows the same accepted repairs.
+
 ## What works
 
 | Area | Current behavior |
@@ -42,6 +44,7 @@ The seed command can be rerun. It also upgrades older Arena databases to include
 | Marketplace | Category and branch filters, bookmarks and local listing drafts. |
 | Skill Passport | Editable career-card draft, practice outcomes, source URLs and a shareable fictional sample card with QR. |
 | Coding Arena | Interactive Three.js pipeline, Monaco editor, C++20 and Python 3, custom runs, live SSE verdicts and submission history. |
+| Decode | 10 Easy, 10 Medium and 10 Hard Python bug fixes. Custom runs, per-challenge browser drafts, hidden tests, editorial unlock and distinct accepted credit. |
 | Contests | Seeded contest, scoring from accepted submissions and a refreshing leaderboard with animated rank changes. |
 
 Roadmaps currently use rules. Real student account sharing, evidence review, marketplace payments and internship listings are future work. The judge uses a signed browser session for local submission ownership.
@@ -96,11 +99,13 @@ The judge uses a skeleton while fetching content, a queue bar with unknown durat
 
 Each Arena problem has three **Decode** steps. Easy walks through the goal and a small example. Medium starts from a direct approach and reveals an optimization. Hard connects the model and invariant to the constraints. Practice mode exposes the guide alongside the full editorial.
 
-The Arena library includes original variations of common patterns such as sliding windows, prefix sums, monotonic stacks, and topological sorting. It links to selected LeetCode and CodeChef exercises for additional practice.
+Decode focuses on repairing supplied implementations. The default lists and direct question links work without choosing a topic. The web server provides public statements, samples and starter source when the judge services are unavailable. Execution and verified progress require the judge.
 
 The smoke test requires a freshly seeded Compose stack because it expects one clean contest leaderboard and only the test session’s submissions. It covers successful and incorrect submissions, compilation failure, timeout, C++ custom output, SSE, session isolation and contest scoring. GitHub Actions runs these checks and builds the Compose stack on pushes to `main` and pull requests.
 
-Run `npm run dev` for the student site without infrastructure. The arena requires the bundled assets and Compose services. Use `docker compose logs worker` for judging errors.
+Run `npm run build:arena` followed by `npm run dev` to browse questions without infrastructure. Use Compose for code execution and verified progress. The fixture tests require Python 3 on the development machine or CI runner. Use `docker compose logs worker` for judging errors.
+
+See [the launch audit](LAUNCH-AUDIT.md) for review findings, fixes and remaining launch gates.
 
 ## Deployment boundary
 
