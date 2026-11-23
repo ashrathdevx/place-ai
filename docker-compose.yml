@@ -1,0 +1,77 @@
+x-app-env: &app-env
+  DATABASE_URL: postgres://place:place-local@postgres:5432/place
+  REDIS_URL: redis://redis:6379
+  S3_ENDPOINT: http://objects:9000
+  S3_BUCKET: place-test-cases
+  AWS_REGION: us-east-1
+  AWS_ACCESS_KEY_ID: place-local
+  AWS_SECRET_ACCESS_KEY: place-local-objects
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: place
+      POSTGRES_PASSWORD: place-local
+      POSTGRES_DB: place
+    volumes: [pg-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U place -d place"]
+      interval: 4s
+      timeout: 4s
+      retries: 20
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server","--appendonly","yes","--maxmemory-policy","noeviction"]
+    volumes: [redis-data:/data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 4s
+      timeout: 4s
+      retries: 20
+  objects:
+    image: minio/minio:RELEASE.2025-05-24T17-08-30Z
+    command: ["server","/data"]
+    environment:
+      MINIO_ROOT_USER: place-local
+      MINIO_ROOT_PASSWORD: place-local-objects
+    volumes: [objects-data:/data]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/ready"]
+      interval: 4s
+      timeout: 4s
+      retries: 20
+  seed:
+    build: { context: ., target: app }
+    environment: *app-env
+    command: ["npm","run","db:seed"]
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      objects: {condition: service_healthy}
+  web:
+    build: { context: ., target: app }
+    environment:
+      <<: *app-env
+      HOST: 0.0.0.0
+      SESSION_SECRET: "${PLACE_SESSION_SECRET:-place-local-development-only-change-for-deployment}"
+    ports: ["127.0.0.1:4173:4173"]
+    depends_on:
+      seed: {condition: service_completed_successfully}
+  judge-image:
+    image: place-ai-judge:local
+    build: { context: ./judge }
+    command: ["/bin/true"]
+  worker:
+    build: { context: ., target: worker }
+    environment:
+      <<: *app-env
+      JUDGE_IMAGE: place-ai-judge:local
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      seed: {condition: service_completed_successfully}
+      judge-image: {condition: service_completed_successfully}
+volumes:
+  pg-data:
+  redis-data:
+  objects-data:

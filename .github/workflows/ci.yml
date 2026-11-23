@@ -1,0 +1,33 @@
+name: Place AI CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install --no-audit --no-fund
+      - run: npm run check
+      - run: npm test
+      - run: npm run build:arena
+      - run: docker compose config --quiet
+      - name: Build and start the local stack
+        run: docker compose up --build --detach
+      - name: Wait for the judge API
+        run: curl --fail --retry 30 --retry-all-errors --retry-delay 2 http://127.0.0.1:4173/api/problems
+      - name: Exercise the complete submission flow
+        run: node scripts/smoke.mjs
+      - name: Collect service logs
+        if: failure()
+        run: docker compose logs --no-color
+      - name: Stop services
+        if: always()
+        run: docker compose down -v
