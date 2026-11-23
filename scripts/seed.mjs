@@ -5,11 +5,18 @@ import { db, queue, s3, bucket, transaction } from '../judge/services.mjs';
 
 try {
   await db.query(await readFile(new URL('../db/schema.sql', import.meta.url), 'utf8'));
-  try {
-    await s3.send(new HeadBucketCommand({ Bucket:bucket }));
-  } catch (error) {
-    if (error.$metadata?.httpStatusCode !== 404) throw error;
-    await s3.send(new CreateBucketCommand({ Bucket:bucket }));
+  for (let attempt = 0; ; attempt++) {
+    try {
+      await s3.send(new HeadBucketCommand({ Bucket:bucket }), {abortSignal:AbortSignal.timeout(5000)});
+      break;
+    } catch (error) {
+      if (error.$metadata?.httpStatusCode === 404) {
+        await s3.send(new CreateBucketCommand({ Bucket:bucket }));
+        break;
+      }
+      if (attempt >= 25 || [401,403].includes(error.$metadata?.httpStatusCode)) throw error;
+      await new Promise(resolve => setTimeout(resolve,1500));
+    }
   }
   for (const problem of bank) {
     await transaction(async client => {

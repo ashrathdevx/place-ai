@@ -18,6 +18,7 @@ export const bucket = process.env.S3_BUCKET ?? 'place-test-cases';
 export const s3 = new S3Client({
   endpoint:process.env.S3_ENDPOINT, region:process.env.AWS_REGION ?? 'us-east-1',
   forcePathStyle:Boolean(process.env.S3_ENDPOINT),
+  requestChecksumCalculation:"WHEN_REQUIRED",responseChecksumValidation:"WHEN_REQUIRED",
 });
 export async function readObject(key) {
   const { Body } = await s3.send(new GetObjectCommand({ Bucket:bucket, Key:key }));
