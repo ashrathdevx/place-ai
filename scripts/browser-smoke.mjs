@@ -5,7 +5,11 @@ const browser = await chromium.launch({channel:process.env.PLACE_BROWSER_CHANNEL
 const context = await browser.newContext({viewport:{width:1440,height:900}});
 const page = await context.newPage();
 const failures = [];
-page.on('pageerror',error => failures.push(error.message));
+page.on('pageerror',error => {
+  // Monaco cancels stale work when the editor frame is left or its model changes.
+  if (error.name === 'Canceled' && error.message === 'Canceled' && /\/vendor\/monaco\//.test(error.stack ?? '')) return;
+  failures.push(error.stack ?? error.message);
+});
 const go = path => page.goto(base+path);
 const loaded = () => page.getByRole('heading',{name:'Examples',exact:true}).waitFor();
 try {
