@@ -51,21 +51,13 @@ export const starterListings = [
   { id:'cad', category:'Resources', branch:'Mechanical', title:'CAD drawing practice set', description:'Dimensioned parts and practice exercises for your first portfolio.', price:119 },
 ];
 
-export const demoSkills = [['Python',84],['FastAPI',76],['SQL',72],['Flutter',64]];
-
 export const platforms = {
   GitHub: ['github.com','www.github.com'],
   LinkedIn: ['linkedin.com','www.linkedin.com'],
   LeetCode: ['leetcode.com','www.leetcode.com'],
   HackerRank: ['hackerrank.com','www.hackerrank.com'],
+  CodeChef: ['codechef.com','www.codechef.com'],
   Codeforces: ['codeforces.com','www.codeforces.com'],
 };
 
-export const evidenceTypes = ['Education','Major project','Minor project','Résumé','Certificate','Hackathon','Internship','Research paper','Portfolio','External profile'];
-
-export const demoEvidence = [
-  { id:'demo-python', title:'Python practice portfolio', type:'Assessment', source:'Internal', detail:'180 coding problems · 14 mini projects · 4 major projects · 2 assessments · 91% average.', skill:'Python', status:'Sample', date:'2026-11-20' },
-  { id:'demo-sql', title:'SQL query assessment', type:'Assessment', source:'Internal', detail:'120 problems · 45 JOIN queries · 30 GROUP BY queries · 15 window function exercises · 88% score.', skill:'SQL', status:'Sample', date:'2026-11-13' },
-  { id:'demo-git', title:'GitHub activity snapshot', type:'External profile', source:'External', detail:'160 commits · 28 repositories · 14 pull requests.', skill:'GitHub', status:'Sample', date:'2026-11-18' },
-  { id:'demo-leet', title:'LeetCode problem history', type:'External profile', source:'External', detail:'425 problems · 160 easy · 220 medium · 45 hard.', skill:'DSA', status:'Sample', date:'2026-11-16' },
-];
+export const evidenceTypes = ['Education','Major project','Minor project','Résumé','Certificate','Assessment','Hackathon','Internship','Research paper','Portfolio','External profile'];

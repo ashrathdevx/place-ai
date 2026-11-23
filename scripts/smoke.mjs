@@ -47,4 +47,14 @@ const history = await (await read('/api/submissions?problem=array-sum',{headers:
 assert.equal(history.length,5);
 const standings = (await (await read('/api/contests/foundations-sprint')).json()).standings;
 assert.equal(standings[0]?.score,1);
+const evidence = await (await read('/api/evidence/arena',{headers:{Cookie:cookie}})).json();
+assert.equal(evidence.solved,1);
+assert.equal(evidence.python,1);
+assert.equal(evidence.accepted,1);
+assert.equal(evidence.graded,4);
+assert.equal(evidence.activity.reduce((sum,day) => sum+day.count,0),4);
+const connections = await (await read('/api/evidence/connections')).json();
+assert.equal(connections.snapshots.github,null);
+const disconnected = await read('/api/evidence/github/disconnect',{method:'POST',headers:{'x-place-evidence':'1'}});
+assert.equal((await disconnected.json()).removed,true);
 console.log('Arena smoke passed: routes, isolation of user history, SSE, AC, WA, CE, TLE, C++ custom input and contest score.');

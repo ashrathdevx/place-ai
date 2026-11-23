@@ -44,7 +44,7 @@ The seed command can be rerun. Compose volumes retain the database, queue and ob
 | Coding Arena | Interactive Three.js pipeline, Monaco editor, C++20 and Python 3, custom runs, live SSE verdicts and submission history. |
 | Contests | Seeded contest, scoring from accepted submissions and a refreshing leaderboard with animated rank changes. |
 
-Roadmaps currently use rules. Real student account sharing, evidence review, live career-platform imports, marketplace payments and internship listings are future work. The judge uses a signed browser session for local submission ownership.
+Roadmaps currently use rules. Real student account sharing, evidence review, marketplace payments and internship listings are future work. The judge uses a signed browser session for local submission ownership.
 
 ## How a submission moves through the system
 
@@ -99,3 +99,35 @@ Run `npm run dev` for the student site without infrastructure. The arena require
 ## Deployment boundary
 
 The Compose profile is a local development environment bound to loopback. The worker uses your Docker daemon to launch runners and must be treated as a privileged service. A public judge should use a separate execution host with a managed sandbox boundary, durable identity, rate limiting and private test storage. Replace all local defaults before deployment. Publishing this source on GitHub does not deploy the app.
+
+## Evidence Engine
+
+The **Skill Passport** displays judge-recorded Arena statistics and a 12-week activity grid. Students can attach project and assessment sources. Synexis is a fictional sample built from the supplied Python, SQL, GitHub and Java practice examples.
+
+| Source | Access | Imported evidence |
+| --- | --- | --- |
+| Place AI Arena | Signed Arena session | Unique accepted problems, accepted Python problems, acceptance rate, submission dates |
+| GitHub | GitHub OAuth app, public read scope | Owned public repositories and commit and PR contributions for the past year |
+| Codeforces | Official public API | Current and peak rating, distinct accepted problems and topic breakdown from up to 250 recent submissions |
+| LinkedIn | Sign in with LinkedIn using OpenID Connect | Member name from UserInfo |
+| LeetCode, HackerRank, CodeChef | Student-provided links | Source links shown separately from API-backed activity |
+
+### Configure OAuth
+
+1. Set `EVIDENCE_PUBLIC_ORIGIN` to the exact origin used to open Place AI. The local default is `http://127.0.0.1:4173`. Use HTTPS for a hosted deployment.
+2. Register a GitHub OAuth app with the callback `{origin}/api/evidence/github/callback`.
+3. Register a LinkedIn application, request **Sign in with LinkedIn using OpenID Connect**, and register `{origin}/api/evidence/linkedin/callback` in its authorized redirect URLs.
+4. Save the following values in the repository’s ignored `.env` for Docker Compose. Generate a distinct signing secret with `openssl rand -hex 32`.
+
+```dotenv
+EVIDENCE_PUBLIC_ORIGIN=http://127.0.0.1:4173
+EVIDENCE_SESSION_SECRET=
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+LINKEDIN_CLIENT_ID=
+LINKEDIN_CLIENT_SECRET=
+```
+
+Restart the web container with `docker compose up -d web`, then open **My profile → Connected platforms**. OAuth access tokens stay on the server during the import. The browser retains signed snapshots for 30 days. Removing a snapshot clears it from Place AI. Provider-side app authorization can be managed in each platform’s own account settings.
+
+Official references are available for [GitHub OAuth](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps), [GitHub GraphQL contributions](https://docs.github.com/en/graphql/reference/users), [Codeforces API](https://codeforces.com/apiHelp), [LinkedIn OpenID Connect](https://learn.microsoft.com/en-us/linkedin/consumer/integrations/self-serve/sign-in-with-linkedin-v2), [HackerRank for Work APIs](https://support.hackerrank.com/articles/2067417637) and [LeetCode’s terms](https://leetcode.com/terms/).

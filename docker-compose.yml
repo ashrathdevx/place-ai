@@ -49,6 +49,12 @@ services:
     environment:
       <<: *app-env
       HOST: 0.0.0.0
+      EVIDENCE_PUBLIC_ORIGIN: "${EVIDENCE_PUBLIC_ORIGIN:-http://127.0.0.1:4173}"
+      EVIDENCE_SESSION_SECRET: "${EVIDENCE_SESSION_SECRET:-}"
+      GITHUB_CLIENT_ID: "${GITHUB_CLIENT_ID:-}"
+      GITHUB_CLIENT_SECRET: "${GITHUB_CLIENT_SECRET:-}"
+      LINKEDIN_CLIENT_ID: "${LINKEDIN_CLIENT_ID:-}"
+      LINKEDIN_CLIENT_SECRET: "${LINKEDIN_CLIENT_SECRET:-}"
       SESSION_SECRET: "${PLACE_SESSION_SECRET:-place-local-development-only-change-for-deployment}"
     ports: ["127.0.0.1:4173:4173"]
     depends_on:

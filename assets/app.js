@@ -1,4 +1,5 @@
-import { branches, challenges, starterListings, demoSkills, platforms, evidenceTypes, demoEvidence } from './data.js';
+import { activityGrid, attachLiveEvidence, identityDetails, renderPassport } from './profile.js';
+import { branches, challenges, starterListings, platforms, evidenceTypes } from './data.js';
 
 const icons = {
   spark:'M12 2v20M2 12h20M5 5l14 14M5 19 19 5',
@@ -36,7 +37,7 @@ const localStatus = (message, stored) => stored ? message : `${message} Browser 
 const main = document.querySelector('main');
 const dialog = document.querySelector('#dialog');
 const route = location.pathname.replace(/\/$/, '') || '/';
-const navigation = [['/learn','Learn'],['/practice','Practice'],['/placements','Placements'],['/arena','Arena'],['/marketplace','Marketplace'],['/proof','Proof Market']];
+const navigation = [['/learn','Learn'],['/practice','Practice'],['/placements','Placements'],['/arena','Arena'],['/marketplace','Marketplace'],['/proof','Evidence Engine']];
 const brand = `<a class="brand" href="/" aria-label="Place AI home"><img src="/assets/mark.svg" alt="" width="33" height="33"> Place<span>AI</span></a>`;
 const nav = navigation.map(([link,label]) => `<a href="${link}" ${route === link || route.startsWith(link + '/') ? 'aria-current="page"' : ''}>${label}</a>`).join('');
 document.querySelector('#header').innerHTML = `<div class="wrap header-inner">${brand}<nav id="nav" aria-label="Main navigation">${nav}</nav><a href="/profile" class="button small header-cta">My profile</a><button id="menu" class="button small secondary" type="button" aria-expanded="false" aria-controls="nav">Menu</button></div>`;
@@ -49,15 +50,14 @@ document.querySelector('#footer').innerHTML = `<div class="wrap footer-inner">${
 
 const action = (link, label, style = '') => `<a class="button ${style}" href="${link}">${label}</a>`;
 const sectionIntro = (label, title, text) => `<div class="page-intro"><p class="eyebrow">${label}</p><h1>${title}</h1><p class="lede">${text}</p></div>`;
-const skillBars = () => `<div class="skill-bars">${demoSkills.map(([name, percent]) => `<div><div class="bar-label"><span>${name}</span><span>${percent}%</span></div><progress aria-label="${name} sample score" max="100" value="${percent}"></progress></div>`).join('')}</div>`;
 const avatar = (name) => `<span class="avatar" aria-hidden="true">${html(name.trim().split(/\s+/).slice(0,2).map(part => part[0]).join('').toUpperCase() || 'PA')}</span>`;
 const stat = (value, label) => `<div><strong>${value}</strong><span>${label}</span></div>`;
 const demoCard = () => `<article class="preview panel">
-  <div class="preview-top"><span>${icon('shield')} SKILL PASSPORT</span><span class="tag">Sample profile</span></div>
-  <div class="identity">${avatar('Aarav Rao')}<div><h2>Aarav Rao</h2><p>Engineering student · CSE</p></div></div>
-  <div class="stats">${stat('986','Problems solved')}${stat('786','DSA score / 1000')}${stat('71%','Interview readiness')}</div>
-  ${skillBars()}
-  <a class="preview-bottom" href="/proof/demo">Explore the evidence ${icon('up')}</a>
+  <div class="preview-top"><span>${icon('shield')} Skill Passport</span><span class="tag">Sample profile</span></div>
+  <div class="identity">${avatar('Synexis')}<div><h2>Synexis</h2><p>Student developer · CSE</p></div></div>
+  <div class="stats">${stat('180','Python problems')}${stat('120','SQL problems')}${stat('18','Recorded projects')}</div>
+  <div class="hero-activity">${activityGrid(Array.from({length:84},(_,i) => ({date:new Date(Date.UTC(2026,10,23+i-83)).toISOString().slice(0,10),count:i%5 === 0 ? 0 : (i*i+i)%7})),true)}</div>
+  <a class="preview-bottom" href="/proof/demo">Open Synexis’s passport ${icon('up')}</a>
 </article>`;
 
 function home() {
@@ -69,18 +69,18 @@ function home() {
   ];
   main.innerHTML = `
     <section class="hero"><div class="hero-grid" aria-hidden="true"></div><div class="wrap hero-inner">
-      <div class="hero-copy"><p class="eyebrow"><span class="dot"></span> Career platform for engineering students</p>
-        <h1>Build a career<br>you can <em>prove.</em></h1>
-        <p class="lede">Learn skills, build projects and prepare for placements. Show recruiters the work behind your skills with your Place AI Skill Passport.</p>
-        <div class="actions">${action('/learn','Start your journey')}${action('/proof/demo','View sample passport','secondary')}</div>
+      <div class="hero-copy"><p class="eyebrow"><span class="dot"></span> Placement preparation for engineering students</p>
+        <h1>Show what<br>you can <em>do.</em></h1>
+        <p class="lede">Solve problems, build projects and collect the evidence behind your skills in one Skill Passport.</p>
+        <div class="actions">${action('/profile','Build your passport')}${action('/arena','Explore the arena','secondary')}</div>
       </div>
-      <div class="hero-art"><span class="orbit orbit-one" aria-hidden="true"></span><span class="orbit orbit-two" aria-hidden="true"></span>${demoCard()}<div class="float-evidence" aria-hidden="true">${icon('layers')} <span>Projects<br><strong>Evidence attached</strong></span></div></div>
+      <div class="hero-art"><span class="orbit orbit-one" aria-hidden="true"></span><span class="orbit orbit-two" aria-hidden="true"></span>${demoCard()}</div>
     </div></section>
     <section class="wrap journey">
-      <div class="section-heading"><div><p class="eyebrow">The student journey</p><h2>From first year to first offer.</h2></div><p>Start with CSE or explore starter tracks for ECE, EEE, Mechanical and Civil.</p></div>
+      <div class="section-heading"><div><p class="eyebrow">The student journey</p><h2>Your placement toolkit.</h2></div><p>Start with CSE or explore starter tracks for ECE, EEE, Mechanical and Civil.</p></div>
       <div class="journey-grid">${steps.map(([symbol, label, title, text, link]) => `<a class="panel journey-card spotlight" href="${link}"><span class="tile-icon">${icon(symbol)}</span><span class="step-label">${label}</span><h3>${title}</h3><p>${text}</p></a>`).join('')}</div>
     </section>
-    <section class="wrap home-proof"><div class="panel proof-callout"><div><p class="eyebrow">${icon('shield')} Proof Market</p><h2>Give every skill<br>something to show.</h2><p>Bring practice results, projects, assessment records and links to public work together in one career profile.</p>${action('/proof','Explore Proof Market','secondary')}</div><ul class="proof-points"><li>${icon('code')} <div><strong>Practice results</strong><span>Challenge outcomes and assessment history</span></div></li><li>${icon('layers')} <div><strong>Projects and experience</strong><span>Portfolio work, internships and credentials</span></div></li><li>${icon('link')} <div><strong>External sources</strong><span>GitHub, LinkedIn and coding profiles</span></div></li></ul></div>
+    <section class="wrap home-proof"><div class="panel proof-callout"><div><p class="eyebrow">${icon('shield')} Evidence Engine</p><h2>Give every skill<br>something to show.</h2><p>See what you solved, what you shipped and where each record came from.</p>${action('/proof','Explore Evidence Engine','secondary')}</div><ul class="proof-points"><li>${icon('code')} <div><strong>Practice results</strong><span>Challenge outcomes and assessment history</span></div></li><li>${icon('layers')} <div><strong>Projects and experience</strong><span>Portfolio work, internships and credentials</span></div></li><li>${icon('link')} <div><strong>External sources</strong><span>GitHub, LinkedIn and coding profiles</span></div></li></ul></div>
     <div class="landing-pipeline"><div class="pipeline-copy"><p class="eyebrow">Coding Arena</p><h2>Run code. See your verdict live.</h2><p>Choose a DSA problem, write C++ or Python, and follow the judge from queue to verdict.</p>${action('/arena','Enter the arena','secondary')}</div><div class="canvas" aria-hidden="true" id="landing-graph"></div></div></section>`;
   const graph = document.querySelector('#landing-graph');
   let disposeGraph;
@@ -289,12 +289,12 @@ function validatedUrl(value, platform) {
   }
 }
 const evidenceRow = (item) => `<article class="evidence-row"><div class="tile-icon">${icon(item.source === 'External' ? 'link' : 'check')}</div>
-  <div><h3>${html(item.title)}</h3><p>${html(item.detail)}</p><p class="evidence-meta">${html(item.type)} · ${html(item.source)} · ${html(item.date.slice(0,10))}</p>
+  <div><h3>${html(item.title)}</h3><p>${html(item.detail)}</p><p class="evidence-meta">${html(item.type)}${item.skill ? ' · '+html(item.skill) : ''} · ${html(item.source)} · ${html(item.date.slice(0,10))}</p>
   ${validatedUrl(item.url, item.platform) ? `<a href="${html(validatedUrl(item.url, item.platform))}" target="_blank" rel="noopener noreferrer">Open source</a>` : ''}</div><span class="tag">${html(item.status)}</span></article>`;
 
 function proof() {
   const evidence = [...evidenceFromPractice(), ...state.evidence].sort((left,right) => right.date.localeCompare(left.date));
-  main.innerHTML = `<div class="wrap page">${sectionIntro('Proof Market','Build a Skill Passport.','Give recruiters a single place to see your practice results, projects, credentials and original sources.')}
+  main.innerHTML = `<div class="wrap page">${sectionIntro('Evidence Engine','Build a Skill Passport.','Give recruiters a single place to see your practice results, projects, credentials and original sources.')}
     <div class="workspace"><section class="panel padded"><h2>Your evidence</h2><p class="muted">Practice results and records saved in this browser.</p><div class="chips" aria-label="Filter evidence">
     ${['All','Internal','External'].map((source,index) => `<button class="chip" data-source="${source}" aria-pressed="${index === 0}">${source}</button>`).join('')}</div><div id="evidence-list" aria-live="polite"></div>${action('/profile','Add evidence','secondary')}</section>
     <section class="panel padded"><p class="eyebrow">Sample Skill Passport</p><h2>See what a recruiter sees.</h2><p class="muted">Open the example to see a career card, skill scores and an evidence breakdown.</p>${action('/proof/demo','View sample passport')}</section></div></div>`;
@@ -310,12 +310,7 @@ function proof() {
 }
 
 function samplePassport() {
-  main.innerHTML = `<div class="wrap page">${sectionIntro('Sample Skill Passport','Aarav Rao.','An illustrative career profile using example metrics from the Place AI sketches.')}
-    <div class="workspace passport-layout"><section class="panel padded"><div class="identity">${avatar('Aarav Rao')}<div><h2>Career card</h2><p>Engineering student · CSE</p></div></div>
-    <div class="chips"><span class="tag">Sample profile</span><span class="tag">Open to internships</span></div>
-    <p class="muted">Sample education · Demo Engineering College · CGPA 9.1</p><p class="muted">Coding languages · C++, Java, Python</p><div class="stats">${stat('986','Problems solved')}${stat('786','DSA score / 1000')}${stat('71%','Interview readiness')}</div>${skillBars()}
-    <div class="actions"><button class="button" id="share">Share sample</button>${action('#sample-evidence','View evidence','secondary')}</div></section>
-    <section class="panel padded" id="sample-evidence"><h2>Evidence behind the scores</h2><p class="muted">Example assessment results and external activity snapshots.</p><div>${demoEvidence.map(evidenceRow).join('')}</div></section></div></div>`;
+  renderPassport(main,{name:'Synexis',role:'Student developer · CSE',college:'Demo Engineering College',cgpa:'9.1',languages:'C++, Java, Python, SQL',availability:'Open to internships'},profileUI,true);
   main.querySelector('#share').onclick = async () => {
     const url = new URL('/proof/demo', location.origin).href;
     showDialog('Share sample career card', `<p class="muted">${['127.0.0.1','localhost'].includes(location.hostname) ? 'This preview URL opens on this computer. A hosted URL is needed for other devices.' : 'Share this URL in a résumé, portfolio or application.'}</p><label class="form">Sample passport URL<input id="share-url" readonly value="${html(url)}"></label><div id="qr" class="qr"></div>
@@ -340,39 +335,43 @@ function samplePassport() {
   };
 }
 
+const profileUI = { action, avatar, dialog, html, showDialog, stat, validatedUrl };
 function profile() {
-  const user = state.profile;
   const getValue = data => String(data ?? '').trim();
-  main.innerHTML = `<div class="wrap page">${sectionIntro('My profile','Make your work visible.','Build a local draft of your career card and collect projects, education and links to work you’ve done.')}
-    <p id="status" class="green" role="status"></p><div class="workspace"><form id="profile-form" class="panel padded form">
-    <div class="identity">${avatar(user.name)}<div><h2>Career card</h2><p>Saved in this browser</p></div></div>
+  renderPassport(main,state.profile,profileUI);
+  const evidenceList = main.querySelector('#profile-evidence');
+  const render = () => { evidenceList.innerHTML = state.evidence.map(evidenceRow).join('') || '<p class="muted">Add your first project, certificate or other source of proof.</p>'; };
+  main.querySelector('#edit-profile').onclick = () => {
+    const user = state.profile;
+    showDialog('Edit profile',`<form class="form">
     ${field('Name','name',user.name,'required maxlength="70"')}${field('College','college',user.college,'maxlength="100"')}
     ${field('CGPA out of 10','cgpa',user.cgpa,'type="number" min="0" max="10" step="0.01"')}
     ${field('Target role','role',user.role,'maxlength="70"')}${field('Coding languages','languages',user.languages,'maxlength="100"')}
     <label>Availability<select name="availability">${['Open to internships','Open to full-time roles','Exploring opportunities','Unavailable'].map(value => `<option ${value === user.availability ? 'selected' : ''}>${value}</option>`).join('')}</select></label>
-    <button class="button">Save profile</button></form>
-    <section class="panel padded"><h2>Evidence library</h2><p class="muted">Add source links and evidence details. Uploaded documents and reviewer verification are planned.</p>
-    <div class="actions"><button id="add-evidence" class="button">Add evidence</button>${action('/proof','View my evidence','secondary')}</div>
-    <div id="profile-evidence"></div></section></div></div>`;
-  const evidenceList = main.querySelector('#profile-evidence');
-  const render = () => { evidenceList.innerHTML = state.evidence.map(evidenceRow).join('') || '<p class="muted">Your project and credential records will appear here.</p>'; };
-  main.querySelector('#profile-form').onsubmit = event => {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const fields = Object.fromEntries(new FormData(form));
-    if (!getValue(fields.name)) {
-      flash('Enter your name.');
-      return;
-    }
-    state.profile = Object.fromEntries(Object.entries(fields).map(([key,value]) => [key,getValue(value)]));
-    form.querySelector('.avatar').outerHTML = avatar(state.profile.name);
-    flash(localStatus('Profile saved.', save()));
+    <button class="button">Save profile</button><p role="status"></p></form>`);
+    dialog.querySelector('form').onsubmit = event => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const fields = Object.fromEntries(new FormData(form));
+      if (!getValue(fields.name)) {
+        form.querySelector('[role="status"]').textContent = 'Enter your name.';
+        return;
+      }
+      state.profile = Object.fromEntries(Object.entries(fields).map(([key,value]) => [key,getValue(value)]));
+      main.querySelector('.profile-sidebar .avatar').outerHTML = avatar(state.profile.name);
+      main.querySelector('#passport-name').textContent = state.profile.name;
+      main.querySelector('#passport-role').textContent = state.profile.role || 'Student developer';
+      main.querySelector('#passport-context').innerHTML = identityDetails(state.profile,profileUI);
+      if (save()) dialog.close();
+      else form.querySelector('[role="status"]').textContent = 'Saved for this session. Browser storage is unavailable.';
+    };
   };
-  main.querySelector('#add-evidence').onclick = () => {
+  const addEvidence = suggestedPlatform => {
     showDialog('Add evidence', `<form class="form">
       <label>Record type<select name="type">${evidenceTypes.map(type => `<option>${type}</option>`).join('')}</select></label>
       <label hidden id="platform-field">Platform<select name="platform">${Object.keys(platforms).map(name => `<option>${name}</option>`).join('')}</select></label>
       ${field('Title','title','','required maxlength="90"')}${field('Source URL (HTTPS)','url','','type="url" maxlength="500"')}
+      <label>Skill<select name="skill"><option>General</option><option>Python</option><option>SQL</option><option>C++</option><option>DSA</option></select></label>
       <label>Evidence details<textarea name="detail" maxlength="400" required></textarea></label>
       <button class="button">Save evidence</button><p id="evidence-error" class="muted" role="status"></p></form>`);
     const form = dialog.querySelector('form');
@@ -381,35 +380,42 @@ function profile() {
       form.querySelector('#platform-field').hidden = !isExternal;
       form.elements.url.required = isExternal;
     };
+    if (suggestedPlatform) {
+      form.elements.type.value = 'External profile';
+      form.elements.platform.value = suggestedPlatform;
+    }
     form.elements.type.onchange = setType;
     setType();
     form.onsubmit = event => {
       event.preventDefault();
-      const { title, type, platform, detail, url } = Object.fromEntries(new FormData(form));
+      const { title, type, platform, detail, url, skill } = Object.fromEntries(new FormData(form));
       const external = type === 'External profile';
       const sourceUrl = url ? validatedUrl(url, external ? platform : undefined) : null;
       if (!title.trim() || !detail.trim() || (url && !sourceUrl) || (external && !sourceUrl)) {
         form.querySelector('#evidence-error').textContent = external ? 'Enter a title, details and a valid HTTPS link on the chosen platform.' : 'Enter a title and details. If provided, use an HTTPS source URL.';
         return;
       }
-      state.evidence.unshift({ id:crypto.randomUUID(), title:title.trim(), type, detail:detail.trim(), url:sourceUrl, platform:external ? platform : undefined,
+      state.evidence.unshift({ id:crypto.randomUUID(), title:title.trim(), type, skill, detail:detail.trim(), url:sourceUrl, platform:external ? platform : undefined,
         source:external ? 'External' : 'Internal', status:external ? 'Linked by student' : 'Submitted locally', date:new Date().toISOString() });
-      flash(localStatus('Evidence saved.', save()));
+      save();
       dialog.close();
       render();
+      main.dispatchEvent(new Event('passport:changed'));
     };
   };
+  main.querySelector('#add-evidence').onclick = () => addEvidence();
   render();
+  void attachLiveEvidence(main,state,{...profileUI,addEvidence});
 }
 
 const pages = {
-  '/': ['Build a career you can prove', home],
+  '/': ['Show what you can do', home],
   '/learn': ['Career coach', learn],
   '/practice': ['Practice', practice],
   '/placements': ['Placements', placements],
   '/marketplace': ['Student Marketplace', marketplace],
-  '/proof': ['Proof Market', proof],
-  '/proof/demo': ['Sample Skill Passport', samplePassport],
+  '/proof': ['Evidence Engine', proof],
+  '/proof/demo': ['Synexis · Sample Skill Passport', samplePassport],
   '/profile': ['My profile', profile],
 };
 const [title, render] = pages[route] ?? pages['/'];

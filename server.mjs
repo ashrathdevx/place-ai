@@ -1,11 +1,13 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
+import { handleEvidence } from './evidence/connectors.mjs';
 
 const pages = new Set(['/', '/learn', '/practice', '/placements', '/marketplace', '/proof', '/proof/demo', '/profile']);
 const assets = new Map([
   ['/assets/app.js', 'text/javascript'],
   ['/assets/data.js', 'text/javascript'],
   ['/assets/site.css', 'text/css'],
+  ['/assets/profile.js', 'text/javascript'],
   ['/assets/mark.svg', 'image/svg+xml'],
   ['/assets/qr.js', 'text/javascript'],
 ]);
@@ -18,6 +20,7 @@ const types = { js:'text/javascript',css:'text/css',woff2:'font/woff2',ttf:'font
 
 createServer(async (req, res) => {
   const path = (req.url ?? '/').split('?')[0].replace(/\/$/, '') || '/';
+  if (path.startsWith('/api/evidence/') && path !== '/api/evidence/arena') return handleEvidence(req,res,path);
   if (path.startsWith('/api/')) {
     if (api) return api.handle(req,res,path);
     res.writeHead(503, { 'Content-Type':'application/json' });

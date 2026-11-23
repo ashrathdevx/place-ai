@@ -158,6 +158,19 @@ export async function handle(req,res,path) {
     const contest = path.match(/^\/api\/contests\/([a-z0-9-]+)$/)?.[1];
     const streamId = path.match(new RegExp(`^/api/submissions/(${idPattern})/events$`))?.[1];
     if (streamId) return await stream(req,res,streamId);
+    if (path === '/api/evidence/arena') {
+      const user = session(req,res);
+      const { rows:[metrics] } = await db.query(`SELECT count(DISTINCT problem_id) FILTER (WHERE verdict='AC')::int AS solved,
+        count(DISTINCT problem_id) FILTER (WHERE verdict='AC' AND language='python')::int AS python,
+        count(DISTINCT problem_id) FILTER (WHERE verdict='AC' AND language='cpp')::int AS cpp,
+        count(*) FILTER (WHERE verdict='AC')::int AS accepted,
+        count(*) FILTER (WHERE verdict IN ('AC','WA','CE','RE','TLE','MLE'))::int AS graded
+        FROM submissions WHERE user_id=$1 AND custom_input IS NULL`,[user]);
+      const { rows:activity } = await db.query(`SELECT (created_at AT TIME ZONE 'UTC')::date::text AS date, count(*)::int AS count
+        FROM submissions WHERE user_id=$1 AND custom_input IS NULL AND created_at >= now()-interval '83 days'
+        GROUP BY 1 ORDER BY 1`,[user]);
+      return json(res,200,{...metrics,activity});
+    }
     if (path === '/api/session') {
       session(req,res);
       return json(res,200,{active:true});

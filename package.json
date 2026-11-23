@@ -10,7 +10,7 @@
     "dev": "node server.mjs",
     "build:arena": "node scripts/build-ui.mjs",
     "check": "node scripts/check.mjs && tsc --noEmit",
-    "test": "node --test judge/verdict.test.ts",
+    "test": "node --test judge/verdict.test.ts evidence/connectors.test.mjs",
     "db:seed": "node scripts/seed.mjs"
   },
   "dependencies": {

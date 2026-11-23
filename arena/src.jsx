@@ -30,7 +30,7 @@ const brand = <a href="/" className="brand" aria-label="Place AI home"><img src=
 
 function Header({ compact = false }) {
   return <header className={compact ? 'arena-header compact' : 'arena-header'}><div className="arena-nav">
-    {brand}<div className="arena-nav-links"><a href="/arena">Coding Arena</a><a href="/arena#contests">Contests</a>{!compact && <a href="/proof">Proof Market</a>}</div>
+    {brand}<div className="arena-nav-links"><a href="/arena">Coding Arena</a><a href="/arena#contests">Contests</a><a href="/profile">My profile</a>{!compact && <a href="/proof">Evidence Engine</a>}</div>
     <a className="button secondary small" href={compact && contest ? `/arena/contests/${encodeURIComponent(contest)}` : compact ? '/arena' : '/learn'}>{compact ? 'Back to arena' : 'Student roadmap'}</a>
   </div></header>;
 }
@@ -136,7 +136,7 @@ function Monaco({ value,onChange,language }) {
       window.require(['vs/editor/editor.main'], () => {
         if (!mounted) return;
         editor.current = window.monaco.editor.create(root.current,{
-          value:latest.current.value,language:latest.current.language,theme:'vs-dark',
+          value:latest.current.value,language:latest.current.language,theme:'vs',
           automaticLayout:true,minimap:{enabled:false},fontSize:14,tabSize:4,
           padding:{top:12},scrollBeyondLastLine:false,fontFamily:'JetBrains Mono Variable, monospace',
           ariaLabel:'Solution code',bracketPairColorization:{enabled:true},
