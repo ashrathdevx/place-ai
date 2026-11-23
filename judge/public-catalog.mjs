@@ -8,6 +8,12 @@ export function publicSummary(problem) {
   return { slug,title,difficulty,topics,kind,time_limit_ms:2000,memory_limit_mb:256 };
 }
 
+export function publicStarters(problem) {
+  return problem?.programs && Object.fromEntries(
+    Object.entries(problem.programs).map(([language,program]) => [language,program.starter]),
+  );
+}
+
 export function publicProblem(problem, { contest = false, editorial = false } = {}) {
   const summary = publicSummary(problem);
   const sample = problem.cases.filter(([, , explanation], index) => ordinalIsSample(index,explanation));
@@ -15,7 +21,7 @@ export function publicProblem(problem, { contest = false, editorial = false } = 
     ...summary,
     statement_md:problem.statement,
     samples:sample.map(([input,output,explanation]) => ({input,output,explanation})),
-    ...(problem.starter && { starter:problem.starter, editorial_locked:!editorial }),
+    ...(problem.starter && { starter:problem.starter, starters:publicStarters(problem), editorial_locked:!editorial }),
     ...(!contest && (!problem.starter || editorial) && { editorial_md:problem.editorial }),
     ...(!contest && !problem.starter && { decoding:getProblemDecoding(problem.slug,problem.difficulty) }),
   };

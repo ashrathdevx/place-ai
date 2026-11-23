@@ -1,3 +1,4 @@
+import { setTheme, themePreference } from './theme.js';
 import { watchArenaProgress } from './live-progress.js';
 import { activityGrid, attachLiveEvidence, renderPassport } from './profile.js';
 import { openProfileSettings } from './profile-settings.js';
@@ -42,7 +43,11 @@ const route = location.pathname.replace(/\/$/, '') || '/';
 const navigation = [['/learn','Learn'],['/practice','Practice'],['/placements','Placements'],['/arena','Arena'],['/arena/decode','Decode'],['/marketplace','Marketplace'],['/proof','Evidence Engine']];
 const brand = `<a class="brand" href="/" aria-label="Place AI home"><img src="/assets/mark.svg" alt="" width="33" height="33"> Place<span>AI</span></a>`;
 const nav = navigation.map(([link,label]) => `<a href="${link}" ${route === link || (route.startsWith(link + '/') && !navigation.some(([candidate]) => candidate !== link && (route === candidate || route.startsWith(candidate + '/')))) ? 'aria-current="page"' : ''}>${label}</a>`).join('');
-document.querySelector('#header').innerHTML = `<div class="wrap header-inner">${brand}<nav id="nav" aria-label="Main navigation">${nav}</nav><a href="/profile" class="button small header-cta" ${route.startsWith('/profile') ? 'aria-current="page"' : ''}>My profile</a><button id="menu" class="button small secondary" type="button" aria-expanded="false" aria-controls="nav">Menu</button></div>`;
+document.querySelector('#header').innerHTML = `<div class="wrap header-inner">${brand}<nav id="nav" aria-label="Main navigation">${nav}</nav><a href="/profile" class="button small header-cta" ${route.startsWith('/profile') ? 'aria-current="page"' : ''}>Skill Passport</a><label class="theme-control"><span class="sr-only">Theme</span><select id="site-theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label><button id="menu" class="button small secondary" type="button" aria-expanded="false" aria-controls="nav">Menu</button></div>`;
+const themeControl = document.querySelector('#site-theme');
+themeControl.value = themePreference();
+themeControl.onchange = () => setTheme(themeControl.value);
+window.addEventListener('place-theme',() => { themeControl.value = themePreference(); });
 document.querySelector('#menu').onclick = event => {
   const open = event.currentTarget.getAttribute('aria-expanded') === 'true';
   event.currentTarget.setAttribute('aria-expanded', String(!open));
@@ -72,9 +77,9 @@ function home() {
   main.innerHTML = `
     <section class="hero"><div class="hero-grid" aria-hidden="true"></div><div class="wrap hero-inner">
       <div class="hero-copy"><p class="eyebrow"><span class="dot"></span> Placement preparation for engineering students</p>
-        <h1>Show what<br>you can <em>do.</em></h1>
-        <p class="lede">Solve problems, build projects and collect the evidence behind your skills in one Skill Passport.</p>
-        <div class="actions">${action('/profile','Build your passport')}${action('/arena/decode','Try Decode','secondary')}</div>
+        <h1>Learn to debug real code.</h1>
+        <p class="lede">Repair complete programs in C, C++, or Python, then add accepted fixes to your Skill Passport.</p>
+        <div class="actions">${action('/arena/decode','Browse challenges')}</div>
       </div>
       <div class="hero-art"><span class="orbit orbit-one" aria-hidden="true"></span><span class="orbit orbit-two" aria-hidden="true"></span>${demoCard()}</div>
     </div></section>
@@ -83,7 +88,7 @@ function home() {
       <div class="journey-grid">${steps.map(([symbol, label, title, text, link]) => `<a class="panel journey-card spotlight" href="${link}"><span class="tile-icon">${icon(symbol)}</span><span class="step-label">${label}</span><h3>${title}</h3><p>${text}</p></a>`).join('')}</div>
     </section>
     <section class="wrap home-proof"><div class="panel proof-callout"><div><p class="eyebrow">${icon('shield')} Evidence Engine</p><h2>Give every skill<br>something to show.</h2><p>See what you solved, what you shipped and where each record came from.</p>${action('/proof','Explore Evidence Engine','secondary')}</div><ul class="proof-points"><li>${icon('code')} <div><strong>Practice results</strong><span>Challenge outcomes and assessment history</span></div></li><li>${icon('layers')} <div><strong>Projects and experience</strong><span>Portfolio work, internships and credentials</span></div></li><li>${icon('link')} <div><strong>External sources</strong><span>GitHub, LinkedIn and coding profiles</span></div></li></ul></div>
-    <div class="landing-pipeline"><div class="pipeline-copy"><h2>Debug real code.</h2><p>Start with a buggy Python program. Run it, fix the logic, and add the accepted result to your Skill Passport.</p>${action('/arena/decode','Open Decode','secondary')}</div><div class="canvas" aria-hidden="true" id="landing-graph"></div></div></section>`;
+    <div class="landing-pipeline"><div class="pipeline-copy"><h2>Debug real code.</h2><p>Start with a buggy C, C++, or Python program. Run it, fix the logic, and add the accepted result to your Skill Passport.</p>${action('/arena/decode','Open Decode','secondary')}</div><div class="canvas" aria-hidden="true" id="landing-graph"></div></div></section>`;
   const graph = document.querySelector('#landing-graph');
   let disposeGraph;
   let active = true;
@@ -172,7 +177,7 @@ function practice() {
       <aside class="practice-sidebar"><section class="panel padded"><p class="eyebrow">Your progress</p><h2 id="practice-status"></h2>
         <progress id="practice-progress" aria-label="Completed practice challenges"></progress>
         <p>Correct answers add a record to your Skill Passport.</p>${action('/profile','View profile','secondary small')}</section>
-      <section class="panel padded"><h2>Fix a logic bug</h2><p>Choose from 30 runnable Python challenges in Decode.</p>${action('/arena/decode','Browse Decode challenges','secondary small')}</section></aside>
+      <section class="panel padded"><h2>Fix a logic bug</h2><p>Choose from 30 runnable challenges in C, C++, and Python in Decode.</p>${action('/arena/decode','Browse Decode challenges','secondary small')}</section></aside>
     </div></div>`;
   const branch = main.querySelector('#practice-branch');
   const search = main.querySelector('#practice-search');

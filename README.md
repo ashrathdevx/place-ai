@@ -12,7 +12,7 @@ Requires Docker Desktop or Docker Engine with the Compose plugin. The first run 
 docker compose up --build
 ```
 
-Open [Place AI](http://127.0.0.1:4173) or go straight to the [Coding Arena](http://127.0.0.1:4173/arena). The seed service provisions 14 practice problems, 30 Python Decode challenges, and a seven-day starter contest on its first run.
+Open [Place AI](http://127.0.0.1:4173) or go straight to the [Coding Arena](http://127.0.0.1:4173/arena). The seed service provisions 14 practice problems, 30 Decode challenges in C++20, C17, and Python 3, and a seven-day starter contest on its first run.
 
 To try the judge, open **Array Sum**, choose Python 3 and submit the following:
 
@@ -103,7 +103,7 @@ Decode focuses on repairing supplied implementations. The default lists and dire
 
 The smoke test requires a freshly seeded Compose stack because it expects one clean contest leaderboard and only the test session’s submissions. It covers successful and incorrect submissions, compilation failure, timeout, C++ custom output, SSE, session isolation and contest scoring. GitHub Actions runs these checks and builds the Compose stack on pushes to `main` and pull requests.
 
-Run `npm run build:arena` followed by `npm run dev` to browse questions without infrastructure. Use Compose for code execution and verified progress. The fixture tests require Python 3 on the development machine or CI runner. Use `docker compose logs worker` for judging errors.
+Run `npm run build:arena` followed by `npm run dev` to browse questions without infrastructure. Use Compose for code execution and verified progress. The fixture tests require Python 3 and C17/C++20 compilers on the development machine or CI runner. Run `npm test` to compile and execute all 90 starter/reference pairs. CI also runs the same three language paths through Docker and checks catalog navigation, drafts and responsive layouts in Chromium. Use `docker compose logs worker` for judging errors.
 
 See [the launch audit](LAUNCH-AUDIT.md) for review findings, fixes and remaining launch gates.
 

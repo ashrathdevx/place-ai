@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { fallbackCatalog } from './judge/public-catalog.mjs';
+import { catalogBySlug, fallbackCatalog } from './judge/public-catalog.mjs';
 import { handleEvidence } from './evidence/connectors.mjs';
 
 const pages = new Set(['/', '/learn', '/practice', '/placements', '/marketplace', '/proof', '/proof/demo', '/profile', '/profile/edit']);
@@ -8,6 +8,8 @@ const assets = new Map([
   ['/assets/app.js', 'text/javascript'],
   ['/assets/data.js', 'text/javascript'],
   ['/assets/site.css', 'text/css'],
+  ['/assets/tokens.css', 'text/css'],
+  ['/assets/theme.js', 'text/javascript'],
   ['/assets/profile.js', 'text/javascript'],
   ['/assets/live-progress.js', 'text/javascript'],
   ['/assets/profile-settings.js', 'text/javascript'],
@@ -17,7 +19,7 @@ const assets = new Map([
 const port = Number(process.env.PORT ?? 4173);
 const host = process.env.HOST ?? '127.0.0.1';
 const api = process.env.DATABASE_URL ? await import('./judge/api.mjs') : null;
-const arenaPage = /^\/arena(?:\/decode|\/(?:problems|contests)\/[a-z0-9-]+)?$/;
+const arenaPage = /^\/arena(?:\/decode|\/problems\/[^/]+(?:\/editorial)?|\/contests\/[a-z0-9-]+)?$/;
 const vendorPath = /^\/vendor\/[a-zA-Z0-9_@.-]+(?:\/[a-zA-Z0-9_@.-]+)*$/;
 const types = { js:'text/javascript',css:'text/css',woff2:'font/woff2',ttf:'font/ttf',json:'application/json' };
 
@@ -34,7 +36,16 @@ createServer(async (req, res) => {
     res.writeHead(503, { 'Content-Type':'application/json' });
     return res.end(JSON.stringify({error:'Start Docker Compose to connect the coding arena and judge.'}));
   }
+  const alias = path.match(/^\/decode(?:\/([a-z0-9-]+)(\/editorial)?)?$/);
+  if (alias || path === '/skill-passport') {
+    const to = !alias ? '/profile' : !alias[1] ? '/arena/decode'
+      : '/arena/problems/'+(alias[1].startsWith('decode-') ? alias[1] : 'decode-'+alias[1])+(alias[2] ?? '');
+    res.writeHead(308,{Location:to+new URL(req.url,'http://localhost').search});
+    return res.end();
+  }
   const arena = arenaPage.test(path);
+  const challenge = path.match(/^\/arena\/problems\/([^/]+)/)?.[1];
+  const missing = challenge && !catalogBySlug.has(challenge);
   const parts = path.split('/');
   const vendor = vendorPath.test(path) && !parts.some(part => part === '.' || part === '..');
   const file = arena ? 'arena/index.html' : pages.has(path) ? 'index.html' : assets.has(path) ? path.slice(1) : vendor ? 'generated' + path.slice(7) : null;
@@ -45,7 +56,7 @@ createServer(async (req, res) => {
   }
   try {
     const data = await readFile(new URL(file, import.meta.url));
-    res.writeHead(200, {
+    res.writeHead(missing ? 404 : 200, {
       'Content-Type': (assets.get(path) ?? (vendor ? types[path.split('.').pop()] ?? 'application/octet-stream' : 'text/html')) + '; charset=utf-8',
       'Cache-Control': 'no-store',
       'X-Content-Type-Options': 'nosniff',

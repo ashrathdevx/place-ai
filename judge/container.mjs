@@ -10,11 +10,14 @@ const common = [
   '--log-driver=none','--tmpfs=/tmp:rw,exec,nosuid,nodev,size=24m,mode=1777',
 ];
 const compileScript = {
-  cpp:'cat > /tmp/code.cpp && g++ -O2 -std=c++20 -pipe /tmp/code.cpp -o /tmp/program && base64 -w0 /tmp/program',
+  c:'cat > /tmp/code.c && gcc -O2 -std=c17 -pedantic-errors -pipe /tmp/code.c -o /tmp/program -lm && base64 -w0 /tmp/program',
+  cpp:'cat > /tmp/code.cpp && g++ -O2 -std=c++20 -pedantic-errors -pipe /tmp/code.cpp -o /tmp/program && base64 -w0 /tmp/program',
   python:'cat > /tmp/code.py && python3 -m py_compile /tmp/code.py',
 };
+const nativeRun = 'IFS= read -r package && printf %s "$package" | base64 -d > /tmp/program && chmod 500 /tmp/program && exec timeout --kill-after=.2s "$1" /tmp/program';
 const runScript = {
-  cpp:'IFS= read -r package && printf %s "$package" | base64 -d > /tmp/program && chmod 500 /tmp/program && exec timeout --kill-after=.2s "$1" /tmp/program',
+  c:nativeRun,
+  cpp:nativeRun,
   python:'IFS= read -r package && printf %s "$package" | base64 -d > /tmp/code.py && exec timeout --kill-after=.2s "$1" python3 -I /tmp/code.py',
 };
 
@@ -75,7 +78,7 @@ export async function compile(language, code) {
   if (result.code !== 0 || result.timedOut || result.overflow) {
     return { error:result.timedOut ? 'Compilation timed out.' : result.overflow ? 'Compilation output limit exceeded.' : result.stderr.slice(0,4000) || 'Compilation failed.' };
   }
-  return { program:language === 'cpp' ? result.stdout.trim() : Buffer.from(code).toString('base64') };
+  return { program:language === 'python' ? Buffer.from(code).toString('base64') : result.stdout.trim() };
 }
 
 export async function runCase(language, program, input, memory, timeMs) {

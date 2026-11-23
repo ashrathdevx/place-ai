@@ -1,0 +1,33 @@
+:root {
+  color-scheme: light;
+  --bg:#F6F8FC; --surface:#FFFFFF; --subtle:#EDF2FA;
+  --text:#182230; --muted:#475569; --border:#D8E1ED; --control-border:#78869B;
+  --blue:#174EA6; --on-accent:#FFFFFF;
+  --green:#146C43; --warning:#805300; --error:#B42318;
+  --code-keyword:#6D28D9; --code-type:#005F73; --code-string:#146C43;
+  --code-number:#9A3412; --code-function:#174EA6; --code-comment:#526075;
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px;
+  --space-6:24px; --space-8:32px; --space-12:48px; --space-16:64px;
+  --control-radius:8px; --panel-radius:12px; --pill-radius:999px;
+  --elevation:0 6px 24px #151d2c24; --feedback-time:150ms;
+  --type-label:.8125rem; --type-compact:.875rem; --type-control:.875rem;
+  --type-body:1rem; --type-subhead:1.25rem; --type-panel-title:1.25rem;
+  --type-title:2rem; --type-display:3.5rem;
+  --leading-label:1.125rem; --leading-control:1.25rem; --leading-body:1.625rem;
+  --leading-panel:1.75rem; --leading-title:2.5rem; --leading-display:3.875rem;
+  --font-ui:'Inter Variable', Inter, system-ui, sans-serif;
+  --font-code:'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
+}
+:root[data-theme=dark] {
+  color-scheme:dark;
+  --bg:#0D1117; --surface:#161B22; --subtle:#202938;
+  --text:#EAF0F7; --muted:#AAB7C8; --border:#344154; --control-border:#75839B;
+  --blue:#A8C7FA; --on-accent:#10213A;
+  --green:#7EE2A8; --warning:#FFD480; --error:#FFA39C;
+  --code-keyword:#D2A8FF; --code-type:#79C0FF; --code-string:#7EE2A8;
+  --code-number:#FFA657; --code-function:#A8C7FA; --code-comment:#A4AFBF;
+  --elevation:0 6px 24px #0006;
+}
+@media (max-width: 760px) {
+  :root { --type-title:1.625rem; --leading-title:2.125rem; --type-display:2.25rem; --leading-display:2.625rem; }
+}

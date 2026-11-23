@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS submissions (
   user_id uuid NOT NULL REFERENCES users(id),
   problem_id integer NOT NULL REFERENCES problems(id),
   contest_id integer REFERENCES contests(id),
-  language text NOT NULL CHECK (language IN ('cpp','python')),
+  language text NOT NULL,
   code text NOT NULL,
   custom_input text,
   status text NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING','COMPILING','RUNNING','FINISHED')),
@@ -72,3 +72,11 @@ CREATE INDEX IF NOT EXISTS submission_history ON submissions(user_id,problem_id,
 CREATE INDEX IF NOT EXISTS contest_submission_history ON submissions(contest_id,user_id,problem_id,created_at,id);
 CREATE INDEX IF NOT EXISTS submission_unfinished ON submissions(created_at) WHERE verdict IS NULL;
 CREATE INDEX IF NOT EXISTS submission_acceptances ON submissions(user_id,problem_id) WHERE verdict='AC' AND custom_input IS NULL;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='submissions_supported_language' AND conrelid='submissions'::regclass) THEN
+    ALTER TABLE submissions DROP CONSTRAINT IF EXISTS submissions_language_check;
+    ALTER TABLE submissions ADD CONSTRAINT submissions_supported_language CHECK (language IN ('c','cpp','python'));
+  END IF;
+END $$;

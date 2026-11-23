@@ -1,6 +1,6 @@
 import { createHmac, randomUUID, randomBytes, timingSafeEqual } from 'node:crypto';
 import { getProblemDecoding } from './problem-decoding.mjs';
-import { catalogBySlug, fallbackCatalog } from './public-catalog.mjs';
+import { catalogBySlug, fallbackCatalog, publicStarters } from './public-catalog.mjs';
 import { db, enqueue, readObject, transaction } from './services.mjs';
 
 const signingKey = process.env.SESSION_SECRET || randomBytes(32);
@@ -48,7 +48,7 @@ async function parse(req) {
 async function submit(req,res) {
   if (req.headers['sec-fetch-site'] === 'cross-site') throw httpError(403,'Use the Place AI contest workspace.');
   const { slug,language,code,customInput,contest } = await parse(req);
-  if (typeof slug !== 'string' || !['cpp','python'].includes(language) || typeof code !== 'string'
+  if (typeof slug !== 'string' || !['c','cpp','python'].includes(language) || typeof code !== 'string'
       || !code.trim() || Buffer.byteLength(code) > 32768
       || (customInput !== undefined && (typeof customInput !== 'string' || Buffer.byteLength(customInput) > 16384))
       || (contest !== undefined && typeof contest !== 'string')) throw httpError(400,'Choose a language and enter up to 32 KB of code and 16 KB of custom input.');
@@ -57,8 +57,8 @@ async function submit(req,res) {
   await transaction(async client => {
     const { rows:[problem] } = await client.query('SELECT id,kind FROM problems WHERE slug=$1',[slug]);
     if (!problem) throw httpError(404,'Problem not found.');
-    if (problem.kind === 'decode' && (language !== 'python' || contest)) {
-      throw httpError(400,'Decode challenges use Python in the practice workspace.');
+    if (problem.kind === 'decode' && contest) {
+      throw httpError(400,'Open Decode challenges in the practice workspace.');
     }
     let contestId = null;
     if (contest && customInput === undefined) {
@@ -202,7 +202,9 @@ export async function handle(req,res,path) {
         const user = session(req,res);
         const { rows:[{solved}] } = await db.query(`SELECT EXISTS (SELECT 1 FROM submissions
           WHERE user_id=$1 AND problem_id=$2 AND verdict='AC' AND custom_input IS NULL) AS solved`,[user,detail.id]);
-        detail.starter = catalogBySlug.get(slug)?.starter;
+        const challenge = catalogBySlug.get(slug);
+        detail.starters = publicStarters(challenge);
+        detail.starter = detail.starters?.python;
         detail.editorial_locked = !solved;
         if (!solved) delete detail.editorial_md;
       } else if (new URL(req.url,'http://localhost').searchParams.has('contest')) {

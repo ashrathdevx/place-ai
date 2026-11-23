@@ -1,4 +1,5 @@
 import { easy, medium } from './decode-foundations.mjs';
+import { nativePrograms } from './decode-native.mjs';
 import { hard } from './decode-advanced.mjs';
 
 const program = body => `import sys
@@ -18,6 +19,7 @@ function challenge(difficulty, [slug,title,topic,goal,input,limits,body,correct,
     statement:`${goal}\n\n## Input\n\n${input}\n\n## Output\n\nPrint one integer.\n\n## Constraints\n\n${limits}`,
     starter:program(body.replace(correct,buggy)),
     reference:program(body),
+    programs:{...nativePrograms(slug),python:{starter:program(body.replace(correct,buggy)),reference:program(body)}},
     editorial:`## Why the code fails\n\n${note}\n\n## How to verify the fix\n\n${verify}\n\n## Complexity\n\n${cost}`,
     cases:cases.map(([values,expected,description]) => [values+'\n',expected+'\n',description]),
   };
