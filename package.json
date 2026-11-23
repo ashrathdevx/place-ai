@@ -10,8 +10,12 @@
     "dev": "node server.mjs",
     "build:arena": "node scripts/build-ui.mjs",
     "check": "node scripts/check.mjs && tsc --noEmit",
-    "test": "node --test judge/verdict.test.ts judge/decode-challenges.test.mjs judge/decode-languages.test.mjs arena/navigation.test.mjs evidence/connectors.test.mjs assets/profile.test.js assets/study-plan.test.js",
-    "db:seed": "node scripts/seed.mjs"
+    "test": "node --test",
+    "db:seed": "node scripts/seed.mjs",
+    "test:smoke": "node scripts/smoke.mjs",
+    "test:browser": "node scripts/browser-smoke.mjs && node scripts/study-smoke.mjs",
+    "verify": "npm run check && npm test && npm run build:arena",
+    "wait:arena": "node scripts/wait-for-arena.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.984.0",
@@ -25,6 +29,7 @@
     "esbuild": "0.25.12",
     "framer-motion": "12.23.24",
     "monaco-editor": "0.52.2",
+    "playwright": "1.58.2",
     "react": "19.2.1",
     "react-dom": "19.2.1",
     "three": "0.181.1",

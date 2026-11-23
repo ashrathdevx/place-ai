@@ -3,6 +3,9 @@ on:
   push:
     branches: [main]
   pull_request:
+concurrency:
+  group: place-ai-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
@@ -14,30 +17,27 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - run: npm install --no-audit --no-fund
-      - run: npm run check
-      - run: npm test
-      - run: npm run build:arena
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run verify
       - run: docker compose config --quiet
       - name: Build and start the local stack
         run: docker compose up --build --detach
       - name: Wait for the judge API
-        run: curl --fail --retry 30 --retry-all-errors --retry-delay 2 http://127.0.0.1:4173/api/problems
+        run: npm run wait:arena
       - name: Exercise the complete submission flow
-        run: node scripts/smoke.mjs
+        run: npm run test:smoke
       - name: Record judge toolchain versions
         run: docker run --rm --entrypoint /bin/sh place-ai-judge:local -c 'gcc --version && g++ --version && python3 --version'
       - name: Exercise browser navigation and workspace
         timeout-minutes: 5
         run: |
-          npm install --no-save --no-audit --no-fund playwright@1.58.2
           if command -v google-chrome; then
             export PLACE_BROWSER_CHANNEL=chrome
           else
             npx playwright install chromium
           fi
-          node scripts/browser-smoke.mjs
-          node scripts/study-smoke.mjs
+          npm run test:browser
       - name: Collect service logs
         if: failure()
         run: docker compose logs --no-color

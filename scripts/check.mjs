@@ -1,6 +1,17 @@
 import { readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
-for (const file of readdirSync('.',{recursive:true})) {
-  if (/^(node_modules|generated|\.git)(\/|$)/.test(file)) continue;
-  if (/\.(mjs|js)$/.test(file)) execFileSync(process.execPath,['--check',file],{stdio:'inherit'});
+
+const ignored = new Set(['node_modules','generated','.git']);
+
+function check(root) {
+  for (const entry of readdirSync(root,{withFileTypes:true})) {
+    const path = join(root,entry.name);
+    if (entry.isDirectory() && !ignored.has(entry.name)) check(path);
+    if (entry.isFile() && /\.(mjs|js)$/.test(entry.name)) {
+      execFileSync(process.execPath,['--check',path],{stdio:'inherit'});
+    }
+  }
 }
+
+check('.');
