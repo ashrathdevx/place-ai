@@ -23,7 +23,7 @@ const read = () => {
 };
 const state = {
   branch:'CSE', completed:{}, evidence:[], listings:[], savedListings:[], placement:{},
-  profile:{ name:'', college:'', cgpa:'', role:'', availability:'Open to internships', languages:'' },
+  profile:{ name:'', college:'', cgpa:'', role:'', availability:'', languages:'' },
   ...read(),
 };
 const save = () => {
@@ -386,7 +386,7 @@ const profileUI = { action, avatar, dialog, html, showDialog, stat, validatedUrl
 function profile() {
   renderPassport(main,state.profile,profileUI);
   const evidenceList = main.querySelector('#profile-evidence');
-  const render = () => { evidenceList.innerHTML = state.evidence.map(evidenceRow).join('') || '<p class="muted">Add your first project, certificate or other source of proof.</p>'; };
+  const render = () => { evidenceList.innerHTML = state.evidence.map(evidenceRow).join('') || '<p class="muted">No evidence added yet.</p>'; };
   const addEvidence = suggestedPlatform => {
     showDialog('Add evidence', `<form class="form">
       <label>Record type<select name="type">${evidenceTypes.map(type => `<option>${type}</option>`).join('')}</select></label>

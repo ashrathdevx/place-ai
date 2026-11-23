@@ -38,3 +38,18 @@ test('avatar rendering only accepts bounded JPEG data', () => {
   }
   assert.match(profilePortrait(user,ui), /^<img/);
 });
+
+test('empty profiles omit the About panel and extra details disclosure', () => {
+  const main = {};
+  renderPassport(main,{},ui);
+  assert.match(main.innerHTML, /<h1 id="profile-title">My profile<\/h1>/);
+  assert.doesNotMatch(main.innerHTML, /<h2>About<\/h2>|<summary>Profile details<\/summary>|Open to internships/);
+});
+
+test('common details appear once with less common information in a disclosure', () => {
+  const main = {};
+  renderPassport(main,{...user,stage:'Student',availability:'Open to internships',degree:'Example Diploma'},ui);
+  assert.equal(main.innerHTML.match(/Example Institution/g)?.length,1);
+  assert.match(main.innerHTML, /class="profile-meta"[^>]*>.*Open to internships/);
+  assert.match(main.innerHTML, /<details class="profile-details"><summary>Profile details<\/summary>.*Example Diploma/s);
+});
