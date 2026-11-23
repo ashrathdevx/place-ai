@@ -237,7 +237,7 @@ function Contest({slug}) {
       <motion.li layout="position" transition={{type:'spring',stiffness:280,damping:28}} key={row.key}>
         <span>{row.rank}</span><strong>{row.display_name}</strong><span>{row.score} solved</span><span>{row.penalty_minutes} min</span>
       </motion.li>
-    )}</AnimatePresence></ol> : <p>No contest submissions yet.</p>}</section></div></> : error ? <p role="alert">{error.message}</p> : <LoadingState label="Loading contest…"/>}
+    )}</AnimatePresence></ol> : <p>No contest submissions yet.</p>}</section></div></> : error ? <p role="alert">{error}</p> : <LoadingState label="Loading contest…"/>}
   </main></>;
 }
 
