@@ -2,16 +2,19 @@ import { useEffect,useRef,useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AnimatePresence,MotionConfig,motion } from 'framer-motion';
 import './typography.css';
-import { Monaco } from './editor.jsx';
+import { Monaco, diagnosticLocation } from './editor.jsx';
 import { catalogSearch,problemHref,selectChallenges } from './navigation.js';
 import { setTheme,themePreference } from '../assets/theme.js';
 import './workspace.css';
+import { cseTrack } from '../assets/study-plan.js';
+import { hasDraft, practiceState, recordHint, recordVerdict, rememberLesson, reviewReason, updatePractice } from '../assets/practice-state.js';
 import { Indicator, Meter } from './loading.jsx';
 
 const path = location.pathname.replace(/\/$/,'');
 const parts = path.split('/');
 const contest = new URL(location.href).searchParams.get('contest');
-const decodeLibrary = parts[2] === 'decode';
+const decodeLibrary = !parts[2] || parts[2] === 'decode';
+const contestLibrary = parts[2] === 'contests' && !parts[3];
 const working = parts[2] === 'problems' && Boolean(parts[3]);
 const editorialRoute = parts[4] === 'editorial';
 if (working) document.body.classList.add('working');
@@ -33,10 +36,10 @@ async function api(url, options) {
 }
 const brand = <a href="/" className="brand" aria-label="Place AI home"><img src="/assets/mark.svg" alt="" width="31" height="31"/> Place<span>AI</span></a>;
 
-function Header({ compact = false, backToDecode = false }) {
+function Header({ compact = false }) {
   const [menu,setMenu] = useState(false);
   const [theme,setPreference] = useState(themePreference);
-  const decodeActive = decodeLibrary || backToDecode;
+  const arenaActive = !compact;
   useEffect(() => {
     const sync = () => setPreference(themePreference());
     window.addEventListener('place-theme',sync);
@@ -47,9 +50,10 @@ function Header({ compact = false, backToDecode = false }) {
   }}><div className="arena-nav">
     {brand}
     <nav id="arena-navigation" aria-label="Main navigation" className={menu ? 'arena-nav-links is-open' : 'arena-nav-links'}>
-      <a href="/arena/decode" aria-current={decodeActive ? 'page' : undefined}>Decode</a>
+      <a href="/learn">Learn</a>
+      <a href="/arena" aria-current={arenaActive ? 'page' : undefined}>Arena</a>
       <a href="/profile">Skill Passport</a>
-      {!decodeActive && <a href="/arena" aria-current={!compact ? 'page' : undefined}>Arena</a>}
+
     </nav>
     <div className="arena-header-actions">
       <label className="theme-control"><span className="sr-only">Theme</span><select aria-label="Theme" value={theme} onChange={event => setTheme(event.target.value)}>
@@ -127,12 +131,25 @@ function ProblemList({ problems, context, search }) {
 }
 
 function ProblemBrowser({ problems, decoding }) {
+  const [records,setRecords] = useState(practiceState);
+  useEffect(() => {
+    const refresh = () => setRecords(practiceState());
+    window.addEventListener('pageshow',refresh);
+    window.addEventListener('storage',refresh);
+    return () => { window.removeEventListener('pageshow',refresh); window.removeEventListener('storage',refresh); };
+  },[]);
   const [search,setSearch] = useState(() => catalogSearch(location.search));
   const filters = new URLSearchParams(search);
+  const view = filters.get('view') ?? 'all';
   const query = filters.get('q') ?? '', topic = filters.get('topic') ?? '';
   const level = filters.get('level') ?? '', progress = filters.get('progress') ?? '';
   const topics = [...new Set(problems.flatMap(item => item.topics ?? []))].sort();
-  const shown = selectChallenges(problems,search);
+  const shown = selectChallenges(problems,search).filter(item => {
+    if (view === 'draft') return hasDraft(item.slug);
+    if (view === 'saved') return records[item.slug]?.saved;
+    if (view === 'review') return !item.solved && reviewReason(records[item.slug]);
+    return true;
+  });
   function update(key,value) {
     const next = new URLSearchParams(search);
     if (value) next.set(key,value);
@@ -148,6 +165,9 @@ function ProblemBrowser({ problems, decoding }) {
   },[]);
   return <div className="arena-library">
     <div className="arena-section-head"><h2>{decoding ? 'All Decode challenges' : 'Practice problems'}</h2><span role="status">{shown.length} of {problems.length}</span></div>
+    {decoding && <div className="arena-modes" role="group" aria-label="Challenge views">{[
+      ['all','All'],['draft','Continue draft'],['saved','Saved'],['review','Needs review'],
+    ].map(([id,label]) => <button key={id} type="button" aria-pressed={view === id} className="solver-tab" onClick={() => update('view',id === 'all' ? '' : id)}>{label}</button>)}</div>}
     <div className="arena-filters">
       <label>Search<input type="search" placeholder="Problem or topic" value={query} onChange={event => update('q',event.target.value)}/></label>
       <label>Topic<select aria-label="Topic" value={topic} onChange={event => update('topic',event.target.value)}><option value="">All topics</option>{topics.map(value => <option key={value}>{value}</option>)}</select></label>
@@ -169,6 +189,24 @@ function contestPhase(item) {
   return now < Date.parse(item.end_time) ? 'Live' : 'Ended';
 }
 
+function ArenaModes({ mode }) {
+  return <nav aria-label="Arena sections" className="arena-modes">
+    {[['decode','Decode','/arena/decode'],['solve','Solve','/arena/solve'],['contests','Contests','/arena/contests']].map(([id,label,url]) =>
+      <a key={id} className="solver-tab" href={url} aria-current={mode === id ? 'page' : undefined}>{label}</a>)}
+  </nav>;
+}
+
+function ContestLibrary() {
+  const contests = useResource('/api/contests',{live:true});
+  return <><Header/><main className="wrap arena-page"><h1>Contests</h1><ArenaModes mode="contests"/>
+    <section className="arena-card" id="contests"><h2>Contest schedule</h2>
+      {contests.data?.length ? contests.data.map(item => <a key={item.slug} className="contest-row" href={'/arena/contests/'+item.slug}>
+        <strong>{item.title}</strong><span>{contestPhase(item)}</span></a>)
+        : contests.data ? <p>No contests scheduled.</p>
+        : contests.error ? <p role="alert">{contests.error.message}</p> : <LoadingState label="Loading contests…"/>}
+    </section></main></>;
+}
+
 function ArenaHome({ decoding }) {
   const problems = useResource('/api/problems',{live:true});
   const contests = useResource('/api/contests',{live:true,enabled:!decoding});
@@ -178,11 +216,12 @@ function ArenaHome({ decoding }) {
   const solved = items?.filter(item => item.solved).length;
   return <><Header/><main className="wrap arena-page">
     <div className="arena-intro">
-      <div><h1>{decoding ? 'Decode' : 'Coding Arena'}</h1><p>{decoding
+      <div><h1>{decoding ? 'Decode' : 'Solve'}</h1><p>{decoding
         ? 'Repair real logic bugs in C++20, C17, or Python and see which tests your fix passes.'
         : 'Solve coding problems or sharpen your debugging skills in Decode.'}</p></div>
-      <a className="button secondary small" href={decoding ? '/arena' : '/arena/decode'}>{decoding ? 'Browse practice problems' : 'Explore Decode →'}</a>
+      <a className="button secondary small" href={decoding ? '/arena/solve' : '/arena/decode'}>{decoding ? 'Browse practice problems' : 'Explore Decode →'}</a>
     </div>
+    <ArenaModes mode={decoding ? 'decode' : 'solve'}/>
     <div className="arena-catalog">
       <section className="arena-card" id="problems" aria-label="Problem library">
         {items ? <ProblemBrowser key={String(decoding)} problems={items} decoding={decoding}/> : problems.error ? <p role="alert">{problems.error.message}</p> : <LoadingState label="Loading problems…"/>}
@@ -230,7 +269,7 @@ function Contest({slug}) {
     return () => { abort.abort(); clearTimeout(timer); };
   },[slug]);
   return <><Header/><main className="wrap arena-page">
-    {data ? <><header className="arena-intro"><div><a className="arena-back" href="/arena#contests">← Contests</a><h1>{data.title}</h1><p>{contestPhase(data)} · Ends {new Date(data.end_time).toLocaleString()} · One point per solved problem.</p></div></header>
+    {data ? <><header className="arena-intro"><div><a className="arena-back" href="/arena/contests">← Contests</a><h1>{data.title}</h1><p>{contestPhase(data)} · Ends {new Date(data.end_time).toLocaleString()} · One point per solved problem.</p></div></header>
     <div className="contest-grid"><section className="arena-card"><h2>Problems</h2><ProblemList problems={data.problems} context={slug}/></section>
     <section className="arena-card"><h2>{contestPhase(data) === 'Ended' ? 'Final standings' : 'Leaderboard'}</h2><p className="standings-note">{error || 'Ranked by score, then time penalty.'}</p>
     {data.standings.length ? <ol className="standings"><AnimatePresence initial={false}>{data.standings.map(row =>
@@ -330,6 +369,17 @@ function Problem({ slug }) {
   const [revision,setRevision] = useState(0);
   const {data,error} = useResource(`/api/problems/${slug}${contest ? '?contest='+encodeURIComponent(contest) : ''}`,{revision,live:true});
   const draftKey = 'place-ai:draft:'+slug+(contest ? ':contest:'+contest : '');
+  const [saved,setSaved] = useState(() => Boolean(practiceState()[slug]?.saved));
+  const [draftStatus,setDraftStatus] = useState('');
+  const [revealed,setRevealed] = useState(0);
+  const [diagnosticJump,setDiagnosticJump] = useState(0);
+  const [inputMode,setInputMode] = useState(decoding ? 'sample' : 'custom');
+  const [sampleIndex,setSampleIndex] = useState(0);
+  const [attemptLanguage,setAttemptLanguage] = useState('');
+  const [attemptVerdict,setAttemptVerdict] = useState('');
+  const [attempt,setAttempt] = useState(null);
+  const [attemptError,setAttemptError] = useState('');
+  const [acceptedSource,setAcceptedSource] = useState(null);
   const [tab,setTab] = useState(editorialRoute ? 'Editorial' : 'Description');
   const [mobile,setMobile] = useState('problem');
   const [codeSize,setCodeSize] = useState(() => {
@@ -340,11 +390,15 @@ function Problem({ slug }) {
   const [customInput,setInput] = useState(null);
   const initialCode = decoding ? data?.starters?.[language] ?? (language === 'python' ? data?.starter ?? '' : '') : starter[language];
   const code = typeof drafts[language] === 'string' ? drafts[language] : initialCode;
-  const input = customInput ?? (decoding ? data?.samples[0]?.input ?? '' : '');
+  const input = inputMode === 'sample' ? data?.samples[sampleIndex]?.input ?? '' : customInput ?? '';
   const search = catalogSearch(location.search);
-  const challengeLink = problemHref(slug,{search,contest});
-  const editorialLink = problemHref(slug,{search,contest,editorial:true});
-  const backLink = contest ? '/arena/contests/'+encodeURIComponent(contest) : (decoding ? '/arena/decode' : '/arena')+search;
+
+  const lesson = cseTrack.find(item => item.id === new URLSearchParams(location.search).get('lesson')
+    && [item.challenge,item.followUp].includes(slug));
+  const withLesson = url => lesson ? url+(url.includes('?') ? '&' : '?')+'lesson='+lesson.id : url;
+  const challengeLink = withLesson(problemHref(slug,{search,contest}));
+  const editorialLink = withLesson(problemHref(slug,{search,contest,editorial:true}));
+  const backLink = contest ? '/arena/contests/'+encodeURIComponent(contest) : (decoding ? '/arena/decode' : '/arena/solve')+search;
   const [expected,setExpected] = useState(null);
   const inputBox = useRef(null);
   const [result,setResult] = useState(null);
@@ -360,9 +414,20 @@ function Problem({ slug }) {
   const historyUrl = '/api/submissions?problem='+encodeURIComponent(slug);
   const online = Boolean(data && !data.offline);
   const ready = Boolean(online && session && !running && code.trim());
+  const diagnostic = (result?.verdict === 'CE' || result?.verdict === 'RE') && result.language === language && result.submittedSource === code ? result.output : null;
+  const nextCatalog = useResource('/api/problems',{enabled:decoding && !contest && result?.verdict === 'AC',revision});
+  const nextSlug = nextCatalog.data?.find(item => item.kind === 'decode' && item.slug !== slug && item.solved === false)?.slug;
+  const hintSteps = (lesson ?? cseTrack.find(item => item.challenge === slug))?.hints ?? (decoding ? [
+    'Trace a small example by hand. Compare each intermediate value with the program’s state.',
+    'Try the smallest valid input and one boundary value allowed by the statement.',
+  ] : null);
+  useEffect(() => { if (lesson && !editorialRoute) rememberLesson(lesson.id,slug); },[lesson,slug]);
   useEffect(() => {
-    const save = () => {
-      try { localStorage.setItem(draftKey,JSON.stringify(drafts)); } catch {}
+    const save = (event) => {
+      try {
+        localStorage.setItem(draftKey,JSON.stringify(drafts));
+        if (!event) setDraftStatus(Object.keys(drafts).length ? 'Draft saved' : '');
+      } catch { if (!event) setDraftStatus('Draft could not be saved'); }
     };
     const timer = setTimeout(save,250);
     window.addEventListener('pagehide',save,{once:true});
@@ -380,7 +445,7 @@ function Problem({ slug }) {
   useEffect(() => {
     if (tab !== 'Submissions' || !session) return;
     const controller = new AbortController();
-    api(historyUrl,{signal:controller.signal}).then(setHistory).catch(error => {
+    api(historyUrl,{signal:controller.signal}).then(items => setHistory(items.filter(item => item.verdict !== 'RUN_OK'))).catch(error => {
       if (!controller.signal.aborted) setNotice(error.message);
     });
     return () => controller.abort();
@@ -390,7 +455,7 @@ function Problem({ slug }) {
     if (!ready) return;
     setNotice('');
     setResult({status:'PENDING',language,submittedSource:code});
-    setExpected(custom ? data.samples.find(sample => sample.input === input)?.output ?? null : null);
+    setExpected(custom && inputMode === 'sample' ? data.samples[sampleIndex]?.output ?? null : null);
     setRunning(custom ? 'run' : 'submit');
     setMobile('output');
     try {
@@ -411,10 +476,11 @@ function Problem({ slug }) {
           events.close();
           setRunning(null);
           if (!custom) {
+            if (decoding && !contest) recordVerdict(slug,id,next.verdict);
             if (next.verdict === 'AC' && decoding) setRevision(value => value + 1);
             try { localStorage.setItem('place-ai:judge-verdict',id); } catch {}
           }
-          setHistory(items => [next,...items.filter(item => item.id !== next.id)]);
+          if (!custom) setHistory(items => [next,...items.filter(item => item.id !== next.id)]);
         }
       };
       events.onerror = () => {
@@ -430,15 +496,28 @@ function Problem({ slug }) {
       setRunning(null);
     }
   }
-  if (error?.status === 404 && !data) return <><Header backToDecode={decoding}/><main className="wrap not-found">
+  if (error?.status === 404 && !data) return <><Header/><main className="wrap not-found">
     <section className="arena-card"><h1>Challenge not found</h1><p>This link may be outdated. The challenge list is the best place to pick up again.</p>
       <a className="button" href={backLink}>Browse challenges</a></section>
   </main></>;
-  const tabs = data?.decoding ? ['Description','Hints','Editorial','Submissions'] : ['Description','Editorial','Submissions'];
-  return <><Header compact backToDecode={decoding}/><main className="solve" ref={workspace} data-panel={mobile}
+  const tabs = decoding ? ['Description','Hints','Compare','Editorial','Submissions']
+    : data?.decoding ? ['Description','Hints','Editorial','Submissions'] : ['Description','Editorial','Submissions'];
+  const filteredAttempts = submissions.filter(item => (!attemptLanguage || item.language === attemptLanguage) && (!attemptVerdict || item.verdict === attemptVerdict));
+  async function openAttempt(id,compare = false) {
+    setAttemptError('');
+    setAcceptedSource(null);
+    setAttempt(null);
+    try {
+      const source = await api('/api/submissions/'+encodeURIComponent(id)+'/source');
+      setAttempt(source);
+      const accepted = submissions.find(item => item.verdict === 'AC' && item.language === source.language && item.id !== id);
+      if (compare && accepted) setAcceptedSource(await api('/api/submissions/'+encodeURIComponent(accepted.id)+'/source'));
+    } catch (error) { setAttemptError(error.message); }
+  }
+  return <><Header compact/><main className="solve" ref={workspace} data-panel={mobile}
     style={{'--left':width[0]+'%','--code-size':codeSize+'px','--code-leading':Math.round(codeSize*22/14)+'px'}}>
     <div className="workspace-bar">
-      <a className="workspace-back" href={backLink}>← {decoding ? 'Challenges' : 'Arena'}</a>
+      <a className="workspace-back" href={backLink}>← {decoding ? 'Challenges' : 'Solve'}</a>
       <div className="workspace-views" role="group" aria-label="Workspace panels">
         {['problem','code','output'].map(view => <button key={view} type="button" className="solver-tab" aria-pressed={mobile === view} onClick={() => setMobile(view)}>{view[0].toUpperCase()+view.slice(1)}</button>)}
       </div>
@@ -459,13 +538,18 @@ function Problem({ slug }) {
         {data ? <AnimatePresence mode="wait" initial={false}><motion.div key={tab} initial={{opacity:0,y:4}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-4}} transition={{duration:.15}}>
           {tab === 'Description' && <>
             <div className="problem-heading"><h1>{data.title}</h1><span className={`difficulty ${data.difficulty.toLowerCase()}`}>{data.difficulty}</span></div>
+            {lesson && <a href={'/learn?lesson='+lesson.id}>← {lesson.title} lesson</a>}
+            {decoding && !contest && <button className="text-button" type="button" aria-pressed={saved} onClick={() => {
+              setSaved(updatePractice(slug,item => ({...item,saved:!item.saved})).saved);
+            }}>{saved ? 'Saved' : 'Save challenge'}</button>}
             <div className="limits"><span>{data.time_limit_ms} ms time limit</span><span>{data.memory_limit_mb} MB memory limit</span></div>
             {decoding && <p className="decode-callout">The editor contains a complete program with a logic bug. Run the example, fix the program, then submit.</p>}
             <Statement text={data.statement_md}/>
             <h2 className="examples-title">Examples</h2>
             {data.samples.map((sample,index) => <section key={index} className="sample">
               <div className="sample-head"><h3>Example {index+1}</h3><button type="button" className="text-button" onClick={() => {
-                setInput(sample.input);
+                setSampleIndex(index);
+                setInputMode('sample');
                 setMobile('output');
                 requestAnimationFrame(() => inputBox.current?.focus());
               }}>Use input ↗</button></div>
@@ -474,9 +558,37 @@ function Problem({ slug }) {
             </section>)}
             {data.topics?.length > 0 && <div className="problem-topics"><h2>Topics</h2><ul>{data.topics.map(topic => <li key={topic}>{topic}</li>)}</ul></div>}
           </>}
-          {tab === 'Hints' && data.decoding && <ProblemHints steps={data.decoding} difficulty={data.difficulty}/>}
+          {tab === 'Hints' && (decoding ? <section><h1>Hints</h1>
+            <ol>{hintSteps.slice(0,revealed).map(hint => <li key={hint}>{hint}</li>)}</ol>
+            {revealed < hintSteps.length && <button type="button" className="button secondary small" onClick={() => {
+              recordHint(slug,revealed); setRevealed(revealed+1);
+            }}>{revealed ? 'Reveal edge case' : 'Reveal tracing hint'}</button>}
+          </section> : data.decoding && <ProblemHints steps={data.decoding} difficulty={data.difficulty}/>)}
+          {tab === 'Compare' && <section><h1>Compare with starter</h1><div className="code-comparison">
+            <div><h2>Buggy starter</h2><pre>{initialCode}</pre></div><div><h2>Your code</h2><pre>{code}</pre></div>
+          </div></section>}
           {tab === 'Editorial' && <Editorial problem={data} challengeLink={challengeLink} contestLink={contest ? problemHref(slug,{editorial:true}) : null}/>}
-          {tab === 'Submissions' && <><h1>Submissions</h1>{submissions.length ? <ol className="submission-history">{submissions.map(item => <li key={item.id}><span>{verdictText(item)}</span><small>{languageLabels[item.language] ?? item.language} · {new Date(item.created_at).toLocaleTimeString()}</small></li>)}</ol> : <p>No submissions in this browser session.</p>}</>}
+          {tab === 'Submissions' && <section><h1>Submissions</h1>
+            <div className="arena-modes">
+              <label>Language <select value={attemptLanguage} onChange={event => setAttemptLanguage(event.target.value)}>
+                <option value="">All languages</option>{Object.entries(languageLabels).map(([id,label]) => <option key={id} value={id}>{label}</option>)}
+              </select></label>
+              <label>Verdict <select value={attemptVerdict} onChange={event => setAttemptVerdict(event.target.value)}>
+                <option value="">All verdicts</option>{['AC','WA','CE','RE','TLE','MLE','SYSTEM_ERROR'].map(value => <option key={value} value={value}>{labels[value]}</option>)}
+              </select></label>
+            </div>
+            {filteredAttempts.length ? <ol className="submission-history">{filteredAttempts.map(item => <li key={item.id}>
+              <span>{verdictText(item)}</span><small>{languageLabels[item.language] ?? item.language} · {new Date(item.created_at).toLocaleString()}</small>
+              {item.verdict && item.verdict !== 'RUN_OK' && <button type="button" className="text-button" onClick={() => openAttempt(item.id)}>View code</button>}
+              {item.verdict && item.verdict !== 'AC' && submissions.some(other => other.language === item.language && other.verdict === 'AC') &&
+                <button type="button" className="text-button" onClick={() => openAttempt(item.id,true)}>Compare with accepted</button>}
+            </li>)}</ol> : <p>No submissions in this view.</p>}
+            {attemptError && <p role="alert">{attemptError}</p>}
+            {attempt && <div className="code-comparison">
+              <div><h2>{labels[attempt.verdict]} attempt</h2><pre>{attempt.code}</pre></div>
+              {acceptedSource && <div><h2>Accepted fix</h2><pre>{acceptedSource.code}</pre></div>}
+            </div>}
+          </section>}
         </motion.div></AnimatePresence> : error ? <p role="alert">{error.message}</p> : <LoadingState label="Loading problem…"/>}
       </div>
     </section>
@@ -492,19 +604,41 @@ function Problem({ slug }) {
             setCodeSize(value);
             try { localStorage.setItem('place-ai:code-size',String(value)); } catch {}
           }}>{[12,14,16,18,20].map(value => <option key={value} value={value}>{value} px</option>)}</select></label>
+          <span role="status" className="draft-status">{draftStatus}</span>
           {decoding && <button className="text-button reset-code" disabled={!data || !Object.hasOwn(drafts,language) || Boolean(running)} onClick={() => {
             if (window.confirm('Replace your edits with the original buggy starter?')) setDrafts(current => { const next = {...current}; delete next[language]; return next; });
           }}>Reset</button>}
         </div>
         <Monaco language={language} value={code} size={codeSize} readOnly={!data}
-          diagnostic={(result?.verdict === 'CE' || result?.verdict === 'RE') && result.language === language && result.submittedSource === code ? result.output : null}
-          onChange={value => setDrafts(current => ({...current,[language]:value}))}/>
+          diagnostic={diagnostic} jump={diagnosticJump}
+          onChange={value => { setDraftStatus('Saving draft…'); setDrafts(current => ({...current,[language]:value})); }}/>
       </div>
       <ResizeHandle label="Resize editor and console" direction="horizontal" state={height} container={right} min={32} max={76}/>
       <div className="pane console-pane"><div className="editor-toolbar"><strong>Test console</strong></div><div className="console-layout">
-        <label>Custom input<textarea ref={inputBox} placeholder="Enter stdin here" value={input} onChange={event => setInput(event.target.value)} spellCheck={false}/></label>
+        <div><div className="arena-modes" role="group" aria-label="Run input">
+          {data?.samples?.length > 0 && <button type="button" className="solver-tab" aria-pressed={inputMode === 'sample'} onClick={() => setInputMode('sample')}>Sample</button>}
+          <button type="button" className="solver-tab" aria-pressed={inputMode === 'custom'} onClick={() => {
+            setInput(current => current ?? input); setInputMode('custom');
+          }}>Custom input</button>
+        </div>
+        {inputMode === 'sample' && data?.samples?.length > 1 && <label>Example <select value={sampleIndex} onChange={event => setSampleIndex(Number(event.target.value))}>
+          {data.samples.map((_,index) => <option key={index} value={index}>Example {index+1}</option>)}
+        </select></label>}
+        <label>{inputMode === 'sample' ? 'Sample input' : 'Custom input'}<textarea aria-label="Custom input" ref={inputBox} placeholder="Enter stdin here"
+          value={input} onChange={event => { setInput(event.target.value); setInputMode('custom'); }} spellCheck={false}/></label></div>
         <section className="verdict" aria-label="Verdict" aria-live="polite"><h2>Verdict</h2>
           {result && <Verdict result={result}/>}
+          {diagnosticLocation(diagnostic) && <button className="text-button" type="button" onClick={() => {
+            setMobile('code'); setDiagnosticJump(value => value+1);
+          }}>Go to diagnostic</button>}
+          {decoding && !contest && result?.verdict === 'AC' && <div className="arena-modes">
+            <a href={editorialLink}>Read editorial</a>
+            <button type="button" className="text-button" onClick={() => {
+              setTab('Submissions'); setMobile('problem'); void openAttempt(result.id);
+            }}>Review my fix</button>
+            {lesson && lesson.challenge === slug ? <a href={problemHref(lesson.followUp)+'?lesson='+lesson.id}>Next challenge</a>
+              : nextSlug ? <a href={problemHref(nextSlug)}>Next challenge</a> : <a href="/arena/decode">Browse challenges</a>}
+          </div>}
           {result?.execution_time_ms != null && <p><small>Elapsed including container startup · {result.execution_time_ms} ms</small></p>}
           {result?.output != null && <>
             <h3 className="console-caption">{result.verdict === 'CE' || result.verdict === 'RE' ? 'Diagnostics' : 'Actual output'}</h3><pre>{result.output || '(empty output)'}</pre>
@@ -518,5 +652,5 @@ function Problem({ slug }) {
   </main></>;
 }
 
-const page = working ? <Problem slug={parts[3]}/> : parts[2] === 'contests' ? <Contest slug={parts[3]}/> : <ArenaHome decoding={decodeLibrary}/>;
+const page = working ? <Problem slug={parts[3]}/> : contestLibrary ? <ContestLibrary/> : parts[2] === 'contests' ? <Contest slug={parts[3]}/> : <ArenaHome decoding={decodeLibrary}/>;
 createRoot(document.querySelector('#arena')).render(<MotionConfig reducedMotion="user">{page}</MotionConfig>);

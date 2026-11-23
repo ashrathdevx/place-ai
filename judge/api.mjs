@@ -163,6 +163,15 @@ export async function handle(req,res,path) {
     const contest = path.match(/^\/api\/contests\/([a-z0-9-]+)$/)?.[1];
     const streamId = path.match(new RegExp(`^/api/submissions/(${idPattern})/events$`))?.[1];
     if (streamId) return await stream(req,res,streamId);
+    const sourceId = path.match(new RegExp(`^/api/submissions/(${idPattern})/source$`))?.[1];
+    if (sourceId) {
+      const user = session(req,res);
+      const {rows:[source]} = await db.query(`SELECT code,language,verdict FROM submissions
+        WHERE id=$1 AND user_id=$2 AND custom_input IS NULL AND verdict IS NOT NULL`,[sourceId,user]);
+      if (!source) throw httpError(404,'Submission not found.');
+      return json(res,200,source);
+    }
+
     if (path === '/api/evidence/arena') {
       const user = session(req,res);
       const { rows:[metrics] } = await db.query(`SELECT count(DISTINCT problem_id) FILTER (WHERE verdict='AC' AND p.kind='practice')::int AS solved,
@@ -183,7 +192,17 @@ export async function handle(req,res,path) {
         FROM submissions s JOIN problems p ON p.id=s.problem_id
         WHERE s.user_id=$1 AND p.kind='decode' AND s.verdict='AC' AND s.custom_input IS NULL
         GROUP BY p.id ORDER BY accepted_at DESC LIMIT 30`,[user]);
-      return json(res,200,{...metrics,activity,recent_decoded});
+      const {rows:accepted_activity} = await db.query(`SELECT * FROM (SELECT DISTINCT ON (p.id,s.contest_id)
+        p.slug,p.title,CASE WHEN s.contest_id IS NOT NULL THEN 'contest' ELSE p.kind END AS category,
+        s.language,s.verdict,s.created_at AS accepted_at
+        FROM submissions s JOIN problems p ON p.id=s.problem_id
+        WHERE s.user_id=$1 AND s.verdict='AC' AND s.custom_input IS NULL
+        ORDER BY p.id,s.contest_id,s.created_at,s.id) first_acceptances ORDER BY accepted_at DESC,slug LIMIT 100`,[user]);
+      const {rows:accepted_days} = await db.query(`SELECT (created_at AT TIME ZONE 'UTC')::date::text AS date,count(*)::int AS count
+        FROM submissions WHERE user_id=$1 AND verdict='AC' AND custom_input IS NULL
+        AND created_at >= date_trunc('day',now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC' - interval '83 days'
+        GROUP BY 1 ORDER BY 1`,[user]);
+      return json(res,200,{...metrics,activity,recent_decoded,accepted_days,accepted_activity});
     }
     if (path === '/api/session') {
       session(req,res);

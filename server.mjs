@@ -12,6 +12,8 @@ const assets = new Map([
   ['/assets/theme.js', 'text/javascript'],
   ['/assets/profile.js', 'text/javascript'],
   ['/assets/live-progress.js', 'text/javascript'],
+  ['/assets/study-plan.js', 'text/javascript'],
+  ['/assets/practice-state.js', 'text/javascript'],
   ['/assets/profile-settings.js', 'text/javascript'],
   ['/assets/mark.svg', 'image/svg+xml'],
   ['/assets/qr.js', 'text/javascript'],
@@ -19,7 +21,7 @@ const assets = new Map([
 const port = Number(process.env.PORT ?? 4173);
 const host = process.env.HOST ?? '127.0.0.1';
 const api = process.env.DATABASE_URL ? await import('./judge/api.mjs') : null;
-const arenaPage = /^\/arena(?:\/decode|\/problems\/[^/]+(?:\/editorial)?|\/contests\/[a-z0-9-]+)?$/;
+const arenaPage = /^\/arena(?:\/(?:decode|solve|contests)|\/problems\/[^/]+(?:\/editorial)?|\/contests\/[a-z0-9-]+)?$/;
 const vendorPath = /^\/vendor\/[a-zA-Z0-9_@.-]+(?:\/[a-zA-Z0-9_@.-]+)*$/;
 const types = { js:'text/javascript',css:'text/css',woff2:'font/woff2',ttf:'font/ttf',json:'application/json' };
 

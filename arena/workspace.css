@@ -284,3 +284,12 @@ body.working { height: 100vh; height: 100dvh; overflow: hidden; }
   .console-layout textarea { min-height:88px; }
   .verdict { overflow:visible; }
 }
+
+.arena-modes { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-block: 8px; }
+.arena-modes .solver-tab[aria-pressed="true"], .arena-modes .solver-tab[aria-current="page"] {
+  color: var(--accent); text-decoration: underline; text-underline-offset: 4px;
+}
+.code-comparison { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%, 220px),1fr)); gap: 12px; }
+.code-comparison > div { min-width: 0; }
+.code-comparison pre { max-height: 24rem; overflow: auto; margin: 0; padding: 12px; border: 1px solid var(--border); border-radius: 8px; }
+.draft-status { font-size: 12px; color: var(--muted); margin-inline-start: auto; }

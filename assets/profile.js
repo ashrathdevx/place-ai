@@ -1,3 +1,5 @@
+import { continueStudy } from './study-plan.js';
+import { studyProgress } from './practice-state.js';
 import { watchArenaProgress } from './live-progress.js';
 import { profilePortrait } from './profile-settings.js';
 
@@ -18,18 +20,19 @@ const format = value => Number.isSafeInteger(value) ? value.toLocaleString('en-I
 const dateLabel = date => date ? new Date(date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}) : '';
 const acceptedRate = ({accepted,graded}={}) => graded ? Math.round(accepted*100/graded)+'%' : '—';
 
-export function activityGrid(days=[], demo=false) {
+export function activityGrid(days=[], demo=false, accepted=false) {
+  const eventLabel = accepted ? 'accepted submissions' : 'submissions';
   const counts = new Map(days.map(item => [item.date,item.count]));
   const today = demo ? Date.parse('2026-11-23') : Date.now();
   const cells = Array.from({length:84},(_,index) => {
     const date = new Date(today-(83-index)*86400000).toISOString().slice(0,10);
     const count = counts.get(date) ?? 0;
-    return `<span class="activity-cell level-${Math.min(count,4)}" title="${date}: ${count} submissions"></span>`;
+    return `<span class="activity-cell level-${Math.min(count,4)}" title="${date}: ${count} ${eventLabel}"></span>`;
   });
   const activeDays = days.filter(day => day.count > 0).length;
   const total = days.reduce((sum,day) => sum+day.count,0);
-  return `<div class="activity-head"><h2>Submission activity</h2><span>${activeDays} active days · 12 weeks</span></div>
-    <div class="activity-grid" role="img" aria-label="${total} submissions across ${activeDays} days in the last 12 weeks">${cells.join('')}</div>
+  return `<div class="activity-head"><h2>${accepted ? 'Accepted activity' : 'Submission activity'}</h2><span>${activeDays} active days · 12 weeks</span></div>
+    <div class="activity-grid" role="img" aria-label="${total} ${eventLabel} across ${activeDays} days in the last 12 weeks">${cells.join('')}</div>
     <div class="heat-legend">Less ${[0,1,2,3,4].map(level => `<i class="activity-cell level-${level}"></i>`).join('')} More</div>`;
 }
 const metricList = (rows,stat) => `<div class="passport-metrics">${rows.map(([label,value]) => stat(format(value),label)).join('')}</div>`;
@@ -76,7 +79,7 @@ function profileMetadata(user,ui) {
       `<div><dt>${label}</dt><dd>${ui.html(value)}</dd></div>`).join('')}</dl></details>` : ''}`;
 }
 
-function shell(user,ui,demo) {
+function shell(user,ui,demo,preview) {
   const title = user.name || 'My profile';
   const portrait = profilePortrait({...user,photo:user.showPhoto === false ? '' : user.photo},ui);
   return `<div class="wrap page profile-page">
@@ -86,28 +89,48 @@ function shell(user,ui,demo) {
         ${user.username ? `<p class="profile-username">@${ui.html(user.username)}</p>` : ''}
         ${user.bio ? `<p class="profile-bio">${ui.html(user.bio)}</p>` : ''}
         ${profileMetadata(user,ui)}</div>
-      <div class="profile-header-actions">${demo ? '<button class="button secondary small" id="share">Share sample</button>' : ui.action('/profile/edit','Edit profile','secondary small')}</div>
+      <div class="profile-header-actions">${demo ? '<button class="button secondary small" id="share">Share sample</button>' : preview ? '' : ui.action('/profile/edit','Edit profile','secondary small')+ui.action('/profile?preview=1','Preview Passport','secondary small')}</div>
     </header>
-    <nav class="profile-nav" aria-label="Profile sections"><a href="#overview">Overview</a><a href="#skills">Evidence</a><a href="#connections">Platforms</a></nav>
+    ${preview ? '<p class="settings-note">Private preview. Only you can see this view in this browser. <a href="/profile">Back to profile</a></p>' : ''}
+    <nav class="profile-nav" aria-label="Profile sections"><a href="#overview">Overview</a><a href="#activity">Activity</a><a href="#skills">Evidence</a>${preview ? '' : '<a href="#connections">Platforms</a>'}</nav>
     <div class="profile-content">
       <section class="panel profile-overview" id="overview" aria-label="Coding overview">
         ${demo ? '<p class="sample-label">Sample data</p>' : ''}
         <div class="stats" id="passport-stats">${ui.stat(demo ? '300' : '—',demo ? 'Practice problems' : 'Arena solved')}${ui.stat(demo ? '91%' : '—',demo ? 'Python score' : 'Problems decoded')}${ui.stat(demo ? '18' : '0','Projects')}</div>
         ${demo ? '' : '<section class="passport-decode" id="passport-decode" aria-label="Decode progress"><h2>Decode progress</h2><p>Loading judge statistics…</p></section>'}
-        <div id="passport-activity">${activityGrid(demo ? sampleDays : [],demo)}</div>
+        ${demo || preview ? '' : '<p id="passport-track">CSE Debugging Foundations</p><a class="button small" id="passport-continue" href="/learn">Continue practice</a>'}
       </section>
-      <section id="skills"><div class="profile-section-heading"><h2>Skills and evidence</h2>${demo ? '' : '<button class="button secondary small" id="add-evidence">Add evidence</button>'}</div>
+      <section class="panel padded" id="activity" aria-label="Coding activity">
+        ${demo ? '' : '<p>An active day has at least one accepted submission (UTC).</p>'}
+        <div id="passport-activity">${demo ? activityGrid(sampleDays,true) : '<p>Loading activity…</p>'}</div>
+        ${demo ? '' : '<div id="accepted-timeline"></div>'}
+      </section>
+      <section id="skills"><div class="profile-section-heading"><h2>Skills and evidence</h2>${demo || preview ? '' : '<button class="button secondary small" id="add-evidence">Add evidence</button>'}</div>
         <div class="panel subject-grid" id="passport-skills">${demo
           ? subject('Python',metrics.python,'91%',ui)+subject('SQL',metrics.sql,'88%',ui)
           : subject('Python',[['Arena problems solved',null]],null,ui)+subject('SQL',[['Mini challenges',0]],null,ui)}</div>
-        ${demo ? '' : '<div class="panel" id="profile-evidence"></div>'}
+        ${demo ? '' : '<div class="panel padded"><h3>Judge-verified results</h3><div id="verified-evidence"></div></div><div class="panel padded" id="profile-evidence"></div>'}
       </section>
-      <section id="connections"><div class="profile-section-heading"><h2>Connected platforms</h2></div>
+      <section id="connections" ${preview ? 'hidden' : ''}><div class="profile-section-heading"><h2>Connected platforms</h2></div>
         ${demo ? sampleConnections(ui) : '<p id="connection-status" role="status"></p><div class="panel connection-list" id="connections-grid"></div>'}
       </section></div></div>`;
 }
-export function renderPassport(main,user,ui,demo=false) {
-  main.innerHTML = shell(user,ui,demo);
+export function renderPassport(main,user,ui,demo=false,preview=false) {
+  main.innerHTML = shell(user,ui,demo,preview);
+}
+export function attachPassportNavigation(main) {
+  const navigation = [...main.querySelectorAll('.profile-nav a')];
+  const panels = [...main.querySelectorAll('.profile-content > section')];
+  function showSection() {
+    const section = navigation.find(link => link.hash === location.hash) ?? navigation[0];
+    for (const link of navigation) {
+      if (link === section) link.setAttribute('aria-current','location');
+      else link.removeAttribute('aria-current');
+    }
+    for (const panel of panels) panel.hidden = '#'+panel.id !== section.hash;
+  }
+  window.addEventListener('hashchange',showSection);
+  showSection();
 }
 const evidenceRequest = async (path,options) => {
   const response = await fetch('/api/evidence/'+path,options);
@@ -116,7 +139,7 @@ const evidenceRequest = async (path,options) => {
   return json;
 };
 const mutate = {method:'POST',headers:{'x-place-evidence':'1'}};
-export async function attachLiveEvidence(main,state,ui) {
+export async function attachLiveEvidence(main,state,ui,{preview=false}={}) {
   const status = main.querySelector('#connection-status');
   const notice = new URL(location.href).searchParams.get('connection');
   if (notice) {
@@ -126,11 +149,25 @@ export async function attachLiveEvidence(main,state,ui) {
       cancelled:'Connection cancelled or expired.',
       setup:'Provider registration is required before connecting.',
     }[notice] ?? '';
-    history.replaceState({},'',location.pathname+location.hash);
+    const url = new URL(location.href);
+    url.searchParams.delete('connection');
+    history.replaceState({},'',url.pathname+url.search+url.hash);
   }
   const grid = main.querySelector('#connections-grid');
   let settings = {configured:{},snapshots:{}};
   let arena = null;
+  const languages = {python:'Python 3',cpp:'C++20',c:'C17'};
+  function acceptedRows(items) {
+    return items.length ? '<ul class="passport-decode-list">'+items.map(item => `<li>
+      <a href="/arena/problems/${encodeURIComponent(item.slug)}">${ui.html(item.title)}</a>
+      <span>${item.category === 'decode' ? 'Decode' : item.category === 'contest' ? 'Contest' : 'Solve'}
+      · ${languages[item.language] ?? ui.html(item.language)} · Accepted · ${dateLabel(item.accepted_at)}</span></li>`).join('')+'</ul>'
+      : '<p>No accepted submissions yet.</p>';
+  }
+  const next = main.querySelector('#passport-continue');
+  if (next) fetch('/api/problems').then(response => response.ok ? response.json() : [])
+    .then(catalog => { next.href = continueStudy(catalog,studyProgress()).url; }).catch(() => {});
+
   const liveStats = () => {
     const projects = state.evidence.filter(item => ['Major project','Minor project'].includes(item.type)).length;
     main.querySelector('#passport-stats').innerHTML = ui.stat(format(arena?.solved),'Arena solved')+
@@ -219,7 +256,7 @@ export async function attachLiveEvidence(main,state,ui) {
       };
     }
   };
-  evidenceRequest('connections').then(data => { settings = data; render(); }).catch(() => {
+  if (!preview) evidenceRequest('connections').then(data => { settings = data; render(); }).catch(() => {
     if (!status.textContent) status.textContent = 'Live imports require the running Place AI server.';
   });
   watchArenaProgress(data => {
@@ -227,7 +264,13 @@ export async function attachLiveEvidence(main,state,ui) {
     arena = data;
     if (JSON.stringify(previous) !== JSON.stringify(data)) {
       liveStats();
-      main.querySelector('#passport-activity').innerHTML = activityGrid(data.activity);
+      main.querySelector('#passport-activity').innerHTML = activityGrid(data.accepted_days ?? [],false,true);
+      main.querySelector('#accepted-timeline').innerHTML = acceptedRows(data.accepted_activity ?? []);
+      main.querySelector('#verified-evidence').innerHTML = acceptedRows(data.accepted_activity ?? []);
     }
+  },() => {
+    if (arena) return;
+    liveStats();
+    main.querySelector('#passport-activity').textContent = 'Accepted activity is unavailable while the judge is offline.';
   });
 }

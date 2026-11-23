@@ -231,3 +231,16 @@ label { color:var(--text); }
   .header-inner .button.small { min-height:44px; }
   .header-inner .header-cta { margin-left:auto; }
 }
+
+.study-page { display: grid; gap: var(--space-24, 24px); }
+.study-page h2, .study-page h3 { margin-block: 0 8px; }
+.study-list { list-style: none; padding: 0; display: grid; gap: 12px; }
+.study-list li > div:first-child, .study-links { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.study-list li h3 { margin: 0; }
+.study-lesson > a { display: inline-block; margin-bottom: 12px; }
+.study-page summary { cursor: pointer; font-weight: 600; }
+.study-page details form { margin-top: 16px; }
+.profile-nav a[aria-current="location"] { color: var(--accent); text-decoration: underline; text-underline-offset: 5px; }
+.profile-content > section[hidden] { display: none; }
+#passport-continue { margin-top: 8px; }
+#accepted-timeline { margin-top: 16px; }

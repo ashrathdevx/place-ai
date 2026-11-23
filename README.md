@@ -146,3 +146,23 @@ LINKEDIN_CLIENT_SECRET=
 Restart the web container with `docker compose up -d web`, then open **My profile → Connected platforms**. OAuth access tokens stay on the server during the import. The browser retains signed snapshots for 30 days. Removing a snapshot clears it from Place AI. Provider-side app authorization can be managed in each platform’s own account settings.
 
 Official references are available for [GitHub OAuth](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps), [GitHub GraphQL contributions](https://docs.github.com/en/graphql/reference/users), [Codeforces API](https://codeforces.com/apiHelp), [LinkedIn OpenID Connect](https://learn.microsoft.com/en-us/linkedin/consumer/integrations/self-serve/sign-in-with-linkedin-v2), [HackerRank for Work APIs](https://support.hackerrank.com/articles/2067417637) and [LeetCode’s terms](https://leetcode.com/terms/).
+
+
+## CSE Debugging Foundations
+
+Open **Learn** to start five modules on arrays, conditions, searching, sorting, and debugging.
+Each lesson has a worked example and two judged repairs. The study plan completes a module
+after both required repairs are accepted. Accepted submissions appear in the Passport's
+Activity and Evidence sections through the same judge identity.
+
+Arena opens at Decode. Use **Solve** for standalone coding problems and **Contests** for the
+contest schedule. Saved challenges, review suggestions, the last lesson, and editor drafts are
+stored in the browser. The Passport preview is private to that browser. Cross-device accounts,
+public publishing, and a rated or scheduled Decode contest require a subsequent release.
+
+Run the browser checks with the Compose stack running and Playwright installed:
+
+```sh
+node scripts/browser-smoke.mjs
+node scripts/study-smoke.mjs
+```

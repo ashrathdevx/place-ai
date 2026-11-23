@@ -1,6 +1,8 @@
 import { setTheme, themePreference } from './theme.js';
+import { cseTrack, challengeUrl, continueStudy, moduleProgress } from './study-plan.js';
+import { practiceState, rememberLesson, reviewReason, studyProgress, updatePractice } from './practice-state.js';
 import { watchArenaProgress } from './live-progress.js';
-import { activityGrid, attachLiveEvidence, renderPassport } from './profile.js';
+import { activityGrid, attachLiveEvidence, attachPassportNavigation, renderPassport } from './profile.js';
 import { openProfileSettings } from './profile-settings.js';
 import { branches, challenges, starterListings, platforms, evidenceTypes } from './data.js';
 
@@ -40,7 +42,7 @@ const localStatus = (message, stored) => stored ? message : `${message} Browser 
 const main = document.querySelector('main');
 const dialog = document.querySelector('#dialog');
 const route = location.pathname.replace(/\/$/, '') || '/';
-const navigation = [['/learn','Learn'],['/practice','Practice'],['/placements','Placements'],['/arena','Arena'],['/arena/decode','Decode'],['/marketplace','Marketplace'],['/proof','Evidence Engine']];
+const navigation = [['/learn','Learn'],['/practice','Practice'],['/placements','Placements'],['/arena','Arena'],['/marketplace','Marketplace'],['/proof','Evidence Engine']];
 const brand = `<a class="brand" href="/" aria-label="Place AI home"><img src="/assets/mark.svg" alt="" width="33" height="33"> Place<span>AI</span></a>`;
 const nav = navigation.map(([link,label]) => `<a href="${link}" ${route === link || (route.startsWith(link + '/') && !navigation.some(([candidate]) => candidate !== link && (route === candidate || route.startsWith(candidate + '/')))) ? 'aria-current="page"' : ''}>${label}</a>`).join('');
 document.querySelector('#header').innerHTML = `<div class="wrap header-inner">${brand}<nav id="nav" aria-label="Main navigation">${nav}</nav><a href="/profile" class="button small header-cta" ${route.startsWith('/profile') ? 'aria-current="page"' : ''}>Skill Passport</a><label class="theme-control"><span class="sr-only">Theme</span><select id="site-theme" aria-label="Theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label><button id="menu" class="button small secondary" type="button" aria-expanded="false" aria-controls="nav">Menu</button></div>`;
@@ -121,47 +123,74 @@ function showDialog(title, content) {
 const flash = (message) => { document.querySelector('#status').textContent = message; };
 
 function learn() {
-  let selection = state.branch;
-  const years = ['Year 1','Year 2','Year 3','Year 4'];
-  main.innerHTML = `<div class="wrap page">
-    ${sectionIntro('Learn','Find your next step.','Build a starter roadmap around your engineering branch, college year and the skills you already have.')}
-    <div class="workspace"><form id="roadmap" class="panel padded form"><h2>Career coach</h2><p class="muted">Roadmaps use curated track rules in this prototype.</p>
-    <label>Engineering branch<select name="branch">${branchOptions(selection)}</select></label>
-    <label>College year<select name="year">${years.map(year => `<option ${year === state.roadmap?.year ? 'selected' : ''}>${year}</option>`).join('')}</select></label>
-    <label>Target role<select name="role"></select></label><fieldset><legend>Skills you already have</legend><div id="known" class="checkbox-group"></div></fieldset>
-    <button class="button" type="submit">Build my roadmap</button></form><section id="plan" class="panel padded" aria-live="polite"></section></div></div>`;
-  const form = main.querySelector('form');
-  const populate = () => {
-    const track = branches[selection];
-    const saved = state.roadmap?.branch === selection ? state.roadmap : null;
-    form.elements.role.innerHTML = track.roles.map(role => `<option ${role === saved?.role ? 'selected' : ''}>${role}</option>`).join('');
-    form.querySelector('#known').innerHTML = track.skills.map(skill => `<label><input type="checkbox" name="known" value="${skill}" ${saved?.known.includes(skill) ? 'checked' : ''}> ${skill}</label>`).join('');
+  const lesson = cseTrack.find(item => item.id === new URLSearchParams(location.search).get('lesson'));
+  if (lesson) rememberLesson(lesson.id);
+  main.innerHTML = `<div class="wrap page study-page">
+    ${sectionIntro('Learn','CSE Debugging Foundations','Practise tracing code, testing edge cases, and fixing logic bugs.')}
+    <div id="study-resume" class="actions"></div>
+    ${lesson ? `<article class="panel padded study-lesson"><a href="/learn">← Study plan</a><h2>${lesson.title}</h2><p>${lesson.concept}</p>
+      <h3>Worked example</h3><p>${lesson.example}</p><p>${lesson.goal}</p><div class="actions">
+      ${action(challengeUrl(lesson.id,lesson.challenge),'Open Decode challenge')}
+      ${action(challengeUrl(lesson.id,lesson.followUp),'Open follow-up','secondary')}</div></article>` : ''}
+    <section aria-labelledby="study-modules"><h2 id="study-modules">Modules</h2><p>Complete both accepted repairs in a module to finish it.</p><ol id="module-list" class="study-list"></ol></section>
+    <section class="panel padded" id="study-review" aria-labelledby="review-title"><h2 id="review-title" tabindex="-1">Review queue</h2><div id="review-list"></div></section>
+    <details class="panel padded" id="study-settings"><summary>Edit study plan</summary><form class="form">
+      <label>Engineering branch<select name="branch">${branchOptions(state.roadmap?.branch ?? state.branch)}</select></label>
+      <label>College year<select name="year">${['Year 1','Year 2','Year 3','Year 4'].map(year => `<option${year === state.roadmap?.year ? ' selected' : ''}>${year}</option>`).join('')}</select></label>
+      <label>Target role<select name="role"></select></label><p>CSE Debugging Foundations is available to every branch.</p>
+      <button class="button secondary" type="submit">Save study preferences</button><p role="status"></p></form></details></div>`;
+  const form = main.querySelector('#study-settings form');
+  const roles = () => {
+    form.elements.role.innerHTML = branches[form.elements.branch.value].roles.map(role => `<option${role === state.roadmap?.role ? ' selected' : ''}>${html(role)}</option>`).join('');
   };
-  const renderPlan = (config, message = '') => {
-    const { branch, role, year, known } = config;
-    const track = branches[branch];
-    const roleFocus = {
-      'Software engineer':'Build a small app and write tests for its core logic.',
-      'Backend developer':'Document your API endpoints and test common failure cases.',
-      'Data analyst':'Use SQL to answer a question and summarize the result in a chart.',
-    };
-    const missing = track.skills.filter(skill => !known.includes(skill));
-    const nextSkills = missing.slice(0, year === 'Year 1' ? 2 : 3);
-    main.querySelector('#plan').innerHTML = `<p class="eyebrow">${html(branch)} · ${html(year)}</p><h2>${html(role)} roadmap</h2>
-      <p class="muted" role="status">${html(message)}</p><ol class="roadmap-list"><li><strong>Close your skill gaps</strong><p>${nextSkills.length ? html(nextSkills.join(' · ')) : 'Review your skills in a timed practice session.'}</p></li>
-      <li><strong>Build a project</strong><p>${track.project} ${roleFocus[role] ?? ''}</p></li>
-      <li><strong>Capture evidence</strong><p>${year === 'Year 4' ? 'Pair your strongest project with a practice result and prepare an interview walkthrough.' : 'Record your decisions, tests and what you learned in your Skill Passport.'}</p></li></ol>${action('/practice','Go to practice','secondary')}`;
-  };
-  form.elements.branch.onchange = () => { selection = form.elements.branch.value; populate(); };
+  roles();
+  form.elements.branch.onchange = roles;
   form.onsubmit = event => {
     event.preventDefault();
-    const values = new FormData(form);
-    state.branch = selection;
-    state.roadmap = { branch:selection, year:values.get('year'), role:values.get('role'), known:values.getAll('known') };
-    renderPlan(state.roadmap, localStatus('Roadmap updated.', save()));
+    const fields = Object.fromEntries(new FormData(form));
+    state.branch = fields.branch;
+    state.roadmap = {...state.roadmap,...fields};
+    form.querySelector('[role="status"]').textContent = localStatus('Study preferences saved.',save());
   };
-  populate();
-  renderPlan(state.roadmap ?? { branch:selection, role:branches[selection].roles[0], year:'Year 1', known:[] });
+  let catalog = [];
+  const render = () => {
+    const progress = studyProgress();
+    const resume = continueStudy(catalog,progress);
+    const accepted = new Set(catalog.filter(item => item.solved === true).map(item => item.slug));
+    main.querySelector('#study-resume').innerHTML = action(resume.url,resume.label);
+    main.querySelector('#module-list').innerHTML = cseTrack.map(module => {
+      const status = moduleProgress(module,catalog,progress.visited ?? []);
+      return `<li class="panel padded"><div><h3><a href="/learn?lesson=${module.id}">${module.title}</a></h3><span class="tag">${status}</span></div>
+        <p>${module.goal}</p><div class="study-links"><a href="${challengeUrl(module.id,module.challenge)}">Decode challenge</a>${accepted.has(module.challenge) ? '<span class="tag">Accepted</span>' : ''}
+        <a href="${challengeUrl(module.id,module.followUp)}">Follow-up</a>${accepted.has(module.followUp) ? '<span class="tag">Accepted</span>' : ''}</div></li>`;
+    }).join('');
+    const bySlug = new Map(catalog.filter(item => item.kind === 'decode' && item.solved !== true).map(item => [item.slug,item]));
+    main.querySelector('#review-list').innerHTML = Object.entries(practiceState()).flatMap(([slug,item]) => {
+      const reason = reviewReason(item);
+      const problem = bySlug.get(slug);
+      return reason && problem ? [`<p><a href="/arena/problems/${encodeURIComponent(slug)}">${html(problem.title)}</a> · ${reason}
+        <button type="button" class="button secondary small" data-skip="${html(slug)}">Skip</button></p>`] : [];
+    }).join('') || '<p>No challenges to review yet.</p>';
+  };
+  main.querySelector('#review-list').onclick = event => {
+    const skip = event.target.closest('[data-skip]');
+    if (!skip) return;
+    updatePractice(skip.dataset.skip,item => ({...item,skipped:true}));
+    render();
+    (main.querySelector('#review-list button') ?? main.querySelector('#study-review h2')).focus();
+  };
+  async function refresh() {
+    try {
+      const response = await fetch('/api/problems');
+      if (!response.ok) return;
+      const next = await response.json();
+      if (JSON.stringify(next) !== JSON.stringify(catalog)) { catalog = next; render(); }
+    } catch { /* Study content stays available without the judge. */ }
+  }
+  render();
+  void refresh();
+  window.addEventListener('pageshow',event => { if (event.persisted) void refresh(); });
+  window.addEventListener('storage',event => { if (event.key === 'place-ai:judge-verdict') void refresh(); });
 }
 
 function practice() {
@@ -377,6 +406,7 @@ function proof() {
 
 function samplePassport() {
   renderPassport(main,{name:'Synexis',role:'Student developer · CSE',college:'Demo Engineering College',cgpa:'9.1',languages:'C++, Java, Python, SQL',username:'synexis',stage:'Student',country:'India',bio:'I build small tools, practice algorithms and document what I learn.',availability:'Open to internships'},profileUI,true);
+  attachPassportNavigation(main);
   main.querySelector('#share').onclick = async () => {
     const url = new URL('/proof/demo', location.origin).href;
     showDialog('Share sample career card', `<p class="muted">${['127.0.0.1','localhost'].includes(location.hostname) ? 'This preview URL opens on this computer. A hosted URL is needed for other devices.' : 'Share this URL in a résumé, portfolio or application.'}</p><label class="form">Sample passport URL<input id="share-url" readonly value="${html(url)}"></label><div id="qr" class="qr"></div>
@@ -403,9 +433,11 @@ function samplePassport() {
 
 const profileUI = { action, avatar, dialog, html, showDialog, stat, validatedUrl };
 function profile() {
-  renderPassport(main,state.profile,profileUI);
+  const preview = new URLSearchParams(location.search).get('preview') === '1';
+  renderPassport(main,state.profile,profileUI,false,preview);
+  attachPassportNavigation(main);
   const evidenceList = main.querySelector('#profile-evidence');
-  const render = () => { evidenceList.innerHTML = state.evidence.map(evidenceRow).join('') || '<p class="muted">No evidence added yet.</p>'; };
+  const render = () => { evidenceList.innerHTML = '<h3>Self-added projects and external links</h3>'+(state.evidence.map(evidenceRow).join('') || '<p class="muted">No evidence added yet.</p>'); };
   const addEvidence = suggestedPlatform => {
     showDialog('Add evidence', `<form class="form">
       <label>Record type<select name="type">${evidenceTypes.map(type => `<option>${type}</option>`).join('')}</select></label>
@@ -443,9 +475,10 @@ function profile() {
       main.dispatchEvent(new Event('passport:changed'));
     };
   };
-  main.querySelector('#add-evidence').onclick = () => addEvidence();
+  const add = main.querySelector('#add-evidence');
+  if (add) add.onclick = () => addEvidence();
   render();
-  void attachLiveEvidence(main,state,{...profileUI,addEvidence});
+  void attachLiveEvidence(main,state,{...profileUI,addEvidence},{preview});
 }
 
 const pages = {

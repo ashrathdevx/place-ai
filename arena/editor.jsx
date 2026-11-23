@@ -72,7 +72,7 @@ export function diagnosticLocation(text) {
   return null;
 }
 
-export function Monaco({value,onChange,language,readOnly,size,diagnostic}) {
+export function Monaco({value,onChange,language,readOnly,size,diagnostic,jump}) {
   const host = useRef(null), editor = useRef(null), models = useRef(new Map()), views = useRef(new Map());
   const latest = useRef(null);
   latest.current = {value,onChange,language,readOnly,size};
@@ -140,6 +140,16 @@ export function Monaco({value,onChange,language,readOnly,size,diagnostic}) {
     }] : [];
     monaco.editor.setModelMarkers(model,'place-judge',markers);
   },[ready,language,value,readOnly,size,diagnostic]);
+
+  useEffect(() => {
+    const location = diagnosticLocation(diagnostic);
+    if (!jump || !location || !editor.current) return;
+    const instance = editor.current;
+    instance.setPosition({lineNumber:location.line,column:location.column});
+    instance.revealPositionInCenterIfOutsideViewport(instance.getPosition());
+    instance.focus();
+  // Only move focus when explicitly requested by the student.
+  },[jump]);
 
   return <div className="editor-box" style={{'--code-size':size+'px','--code-leading':Math.round(size*22/14)+'px'}}>
     <div ref={host} className={ready ? 'monaco-host' : 'monaco-host editor-pending'}/>
