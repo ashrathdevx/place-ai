@@ -52,7 +52,7 @@ function Header({ compact = false, backToDecode = false }) {
       {!decodeActive && <a href="/arena" aria-current={!compact ? 'page' : undefined}>Arena</a>}
     </nav>
     <div className="arena-header-actions">
-      <label className="theme-control"><span className="sr-only">Theme</span><select value={theme} onChange={event => setTheme(event.target.value)}>
+      <label className="theme-control"><span className="sr-only">Theme</span><select aria-label="Theme" value={theme} onChange={event => setTheme(event.target.value)}>
         <option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option>
       </select></label>
       <button type="button" className="button secondary small arena-menu-button" aria-controls="arena-navigation" aria-expanded={menu} onClick={() => setMenu(!menu)}>Menu</button>
@@ -484,10 +484,10 @@ function Problem({ slug }) {
     <section className="solve-right" ref={right} style={{'--upper':height[0]+'%'}}>
       <div className="pane editor-pane">
         <div className="editor-toolbar editor-chrome">
-          <label className="language"><span className="sr-only">Language</span><select value={language} onChange={event => setLanguage(event.target.value)}>
+          <label className="language"><span className="sr-only">Language</span><select aria-label="Language" value={language} onChange={event => setLanguage(event.target.value)}>
             {Object.entries(languageLabels).map(([id,label]) => <option value={id} key={id}>{label}</option>)}
           </select></label>
-          <label className="language"><span className="sr-only">Code text size</span><select value={codeSize} onChange={event => {
+          <label className="language"><span className="sr-only">Code text size</span><select aria-label="Code text size" value={codeSize} onChange={event => {
             const value = Number(event.target.value);
             setCodeSize(value);
             try { localStorage.setItem('place-ai:code-size',String(value)); } catch {}
