@@ -27,7 +27,30 @@ async function submitFix(slug) {
 }
 
 try {
-  await go('/learn');
+  await go('/');
+  await heading('Learn to debug real code.').waitFor();
+  assert.equal(await link('Start learning').getAttribute('href'),'/learn');
+  assert.equal(await link('Browse challenges').getAttribute('href'),'/arena/decode');
+  assert.equal(await link('Try this challenge').getAttribute('href'),'/arena/problems/decode-last-reading?lesson=arrays');
+  assert.equal(await link('View sample Passport').getAttribute('href'),'/proof/demo');
+  assert.equal(await page.locator('.landing-modules li').count(),5);
+  assert.equal(await page.locator('[data-example-output]').innerText(),'7');
+  await button('Example fix').focus();
+  await page.keyboard.press('Enter');
+  assert.equal(await button('Example fix').getAttribute('aria-pressed'),'true');
+  assert.equal(await page.locator('[data-example-output]').innerText(),'8');
+  await button('Buggy starter').click();
+  assert.equal(await page.locator('[data-example-output]').innerText(),'7');
+  for (const theme of ['light','dark']) {
+    await page.getByLabel('Theme',{exact:true}).selectOption(theme);
+    assert.equal(await page.locator('html').getAttribute('data-theme'),theme);
+    for (const width of [360,768,1024,1440]) {
+      await page.setViewportSize({width,height:900});
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),`Landing overflow at ${width}px in ${theme}`);
+    }
+  }
+  await page.getByLabel('Theme',{exact:true}).selectOption('system');
+  await link('Start learning').click();
   assert.equal(await page.locator('#module-list > li').count(),5);
   assert.match(await module.innerText(),/To do/);
   await link('Continue learning').click();

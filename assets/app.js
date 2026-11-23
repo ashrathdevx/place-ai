@@ -2,7 +2,7 @@ import { setTheme, themePreference } from './theme.js';
 import { cseTrack, challengeUrl, continueStudy, moduleProgress } from './study-plan.js';
 import { practiceState, rememberLesson, reviewReason, studyProgress, updatePractice } from './practice-state.js';
 import { watchArenaProgress } from './live-progress.js';
-import { activityGrid, attachLiveEvidence, attachPassportNavigation, renderPassport } from './profile.js';
+import { attachLiveEvidence, attachPassportNavigation, renderPassport } from './profile.js';
 import { openProfileSettings } from './profile-settings.js';
 import { branches, challenges, starterListings, platforms, evidenceTypes } from './data.js';
 
@@ -61,60 +61,92 @@ const action = (link, label, style = '') => `<a class="button ${style}" href="${
 const sectionIntro = (label, title, text) => `<div class="page-intro"><p class="eyebrow">${label}</p><h1>${title}</h1><p class="lede">${text}</p></div>`;
 const avatar = (name) => `<span class="avatar" aria-hidden="true">${html(name.trim().split(/\s+/).slice(0,2).map(part => part[0]).join('').toUpperCase() || 'PA')}</span>`;
 const stat = (value, label) => `<div><strong>${value}</strong><span>${label}</span></div>`;
-const demoCard = () => `<article class="preview panel">
-  <div class="preview-top"><span>${icon('shield')} Skill Passport</span><span class="tag">Sample profile</span></div>
-  <div class="identity">${avatar('Synexis')}<div><h2>Synexis</h2><p>Student developer · CSE</p></div></div>
-  <div class="stats">${stat('180','Python problems')}${stat('120','SQL problems')}${stat('18','Recorded projects')}</div>
-  <div class="hero-activity">${activityGrid(Array.from({length:84},(_,i) => ({date:new Date(Date.UTC(2026,10,23+i-83)).toISOString().slice(0,10),count:i%5 === 0 ? 0 : (i*i+i)%7})),true)}</div>
-  <a class="preview-bottom" href="/proof/demo">Open Synexis’s passport ${icon('up')}</a>
-</article>`;
-
 function home() {
+  const firstModule = cseTrack[0];
+  const sampleChallenge = challengeUrl(firstModule.id,firstModule.challenge);
   const steps = [
-    ['spark','Learn','Find a roadmap','Get a branch-specific plan and see which skills to work on next.','/learn'],
-    ['code','Build','Practice and build','Solve mini challenges and turn your projects into portfolio evidence.','/practice'],
-    ['bag','Get placed','Prepare for interviews','Track application prep and share your work with recruiters.','/placements'],
-    ['shop','Marketplace','Explore student resources','Browse sample resources and draft your own listing.','/marketplace'],
+    ['spark','Learn','Follow a study plan','Trace a worked example, then open the two repairs for that module.','/learn','Explore Learn'],
+    ['code','Decode','Repair a real program','Run the sample, test an edge case, and submit your fix against hidden tests.','/arena/decode','Browse Decode'],
+    ['shield','Skill Passport','See what you’ve earned','Review the challenge, language, date, and verdict behind each accepted repair.','/profile','Open Skill Passport'],
   ];
   main.innerHTML = `
-    <section class="hero"><div class="hero-grid" aria-hidden="true"></div><div class="wrap hero-inner">
-      <div class="hero-copy"><p class="eyebrow"><span class="dot"></span> Placement preparation for engineering students</p>
-        <h1>Learn to debug real code.</h1>
-        <p class="lede">Repair complete programs in C, C++, or Python, then add accepted fixes to your Skill Passport.</p>
-        <div class="actions">${action('/arena/decode','Browse challenges')}</div>
-      </div>
-      <div class="hero-art"><span class="orbit orbit-one" aria-hidden="true"></span><span class="orbit orbit-two" aria-hidden="true"></span>${demoCard()}</div>
-    </div></section>
-    <section class="wrap journey">
-      <div class="section-heading"><div><p class="eyebrow">The student journey</p><h2>Your placement toolkit.</h2></div><p>Start with CSE or explore starter tracks for ECE, EEE, Mechanical and Civil.</p></div>
-      <div class="journey-grid">${steps.map(([symbol, label, title, text, link]) => `<a class="panel journey-card spotlight" href="${link}"><span class="tile-icon">${icon(symbol)}</span><span class="step-label">${label}</span><h3>${title}</h3><p>${text}</p></a>`).join('')}</div>
-    </section>
-    <section class="wrap home-proof"><div class="panel proof-callout"><div><p class="eyebrow">${icon('shield')} Evidence Engine</p><h2>Give every skill<br>something to show.</h2><p>See what you solved, what you shipped and where each record came from.</p>${action('/proof','Explore Evidence Engine','secondary')}</div><ul class="proof-points"><li>${icon('code')} <div><strong>Practice results</strong><span>Challenge outcomes and assessment history</span></div></li><li>${icon('layers')} <div><strong>Projects and experience</strong><span>Portfolio work, internships and credentials</span></div></li><li>${icon('link')} <div><strong>External sources</strong><span>GitHub, LinkedIn and coding profiles</span></div></li></ul></div>
-    <div class="landing-pipeline"><div class="pipeline-copy"><h2>Debug real code.</h2><p>Start with a buggy C, C++, or Python program. Run it, fix the logic, and add the accepted result to your Skill Passport.</p>${action('/arena/decode','Open Decode','secondary')}</div><div class="canvas" aria-hidden="true" id="landing-graph"></div></div></section>`;
-  const graph = document.querySelector('#landing-graph');
-  let disposeGraph;
-  let active = true;
-  const observer = new IntersectionObserver(entries => {
-    if (!entries.some(entry => entry.isIntersecting)) return;
-    observer.disconnect();
-    import('/vendor/pipeline.js').then(({mountPipeline}) => {
-      if (active) disposeGraph = mountPipeline(graph);
-    }).catch(() => {});
-  }, {rootMargin:'90px'});
-  observer.observe(graph);
-  window.addEventListener('pagehide', () => { active = false; observer.disconnect(); disposeGraph?.(); }, {once:true});
-  if (!matchMedia('(pointer: coarse)').matches) {
-    main.querySelectorAll('.spotlight').forEach(card => card.addEventListener('pointermove', event => {
-      const rect = card.getBoundingClientRect();
-      card.style.setProperty('--x', `${event.clientX - rect.left}px`);
-      card.style.setProperty('--y', `${event.clientY - rect.top}px`);
-    }));
+    <div class="landing">
+      <section class="landing-hero" aria-labelledby="landing-title">
+        <div class="wrap landing-hero-layout">
+          <div class="landing-intro">
+            <p class="eyebrow">CSE Debugging Foundations</p>
+            <h1 id="landing-title">Learn to debug real code.</h1>
+            <p class="lede">Follow a study plan, repair complete programs in C, C++, or Python, and see your accepted fixes in your Skill Passport.</p>
+            <div class="actions">${action('/learn','Start learning')}${action('/arena/decode','Browse challenges','secondary')}</div>
+          </div>
+          <article class="panel landing-example" aria-labelledby="example-title">
+            <header class="landing-example-header">
+              <div><p>Decode example</p><h2 id="example-title">The Missing Reading</h2></div>
+              <span class="tag">Python 3</span>
+            </header>
+            <div class="landing-example-body">
+              <div class="landing-example-controls" role="group" aria-label="Code example">
+                <button type="button" aria-pressed="true" data-example="starter">Buggy starter</button>
+                <button type="button" aria-pressed="false" data-example="fix">Example fix</button>
+              </div>
+              <pre class="landing-code" aria-label="Python example"><code><span class="landing-code-comment"># Include every reading</span>
+<span class="landing-code-keyword">return</span> <span class="landing-code-function">sum</span>(a[<span data-example-range>1:-1</span>])</code></pre>
+              <dl class="landing-sample">
+                <div><dt>Sample input</dt><dd>4 2 -3 8 1</dd></div>
+                <div><dt>Output</dt><dd data-example-output>7</dd></div>
+                <div><dt>Expected</dt><dd>8</dd></div>
+              </dl>
+              <p class="landing-example-result" data-example-result role="status">The slice skips the final reading.</p>
+            </div>
+            <a class="landing-example-link" href="${sampleChallenge}">Try this challenge <span aria-hidden="true">↗</span></a>
+          </article>
+        </div>
+      </section>
+
+      <section class="wrap landing-path" aria-labelledby="landing-path-title">
+        <h2 id="landing-path-title">From your first lesson to your first accepted fix</h2>
+        <ol class="landing-path-grid">${steps.map(([symbol,label,title,copy,link,linkLabel]) => `
+          <li class="panel landing-step">
+            <p class="landing-step-label"><span class="tile-icon">${icon(symbol)}</span>${label}</p>
+            <h3>${title}</h3><p>${copy}</p>
+            <a href="${link}">${linkLabel} <span aria-hidden="true">→</span></a>
+          </li>`).join('')}</ol>
+      </section>
+
+      <section class="wrap landing-details" aria-label="Study track and Skill Passport">
+        <article class="panel landing-detail">
+          <h2>What you’ll practise</h2>
+          <p>Each module has a worked example and two judged repairs. Both must be accepted to complete the module.</p>
+          <ul class="landing-modules">${cseTrack.map(module => `<li><a href="/learn?lesson=${module.id}">${module.title}<span aria-hidden="true"> →</span></a></li>`).join('')}</ul>
+        </article>
+        <article class="panel landing-detail">
+          <h2>Keep a record of your progress</h2>
+          <p>Your Skill Passport groups your practice into Overview, Activity, and Evidence. Open a record to revisit the challenge behind it.</p>
+          <dl class="landing-passport" aria-label="Example accepted record">
+            <div><dt>Challenge</dt><dd>The Missing Reading</dd></div>
+            <div><dt>Language</dt><dd>Python 3</dd></div>
+            <div><dt>Verdict</dt><dd class="landing-result-pass">Accepted</dd></div>
+          </dl>
+          ${action('/proof/demo','View sample Passport','secondary')}
+        </article>
+      </section>
+    </div>`;
+  const controls = [...main.querySelectorAll('[data-example]')];
+  const range = main.querySelector('[data-example-range]');
+  const output = main.querySelector('[data-example-output]');
+  const result = main.querySelector('[data-example-result]');
+  for (const control of controls) {
+    control.onclick = () => {
+      const fixed = control.dataset.example === 'fix';
+      for (const button of controls) button.setAttribute('aria-pressed',String(button === control));
+      range.textContent = fixed ? '1:' : '1:-1';
+      output.textContent = fixed ? '8' : '7';
+      result.textContent = fixed ? 'The output matches this sample.' : 'The slice skips the final reading.';
+      result.classList.toggle('landing-result-pass',fixed);
+    };
   }
 }
 
-const branchOptions = (current, extra = []) => [...extra, ...Object.keys(branches)].map(branch => `<option ${branch === current ? 'selected' : ''}>${branch}</option>`).join('');
-const field = (label, name, value = '', attributes = '') => `<label>${label}<input name="${name}" value="${html(value)}" ${attributes}></label>`;
-const closeButton = '<button class="close" type="button" aria-label="Close dialog">×</button>';
 function showDialog(title, content) {
   dialog.innerHTML = `${closeButton}<h2 id="dialog-title">${html(title)}</h2>${content}`;
   dialog.querySelector('.close').onclick = () => dialog.close();
