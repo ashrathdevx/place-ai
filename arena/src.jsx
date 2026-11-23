@@ -60,7 +60,8 @@ function useResource(url, { live = false, revision = 0, enabled = true } = {}) {
       if (fetching || abort.signal.aborted) return;
       fetching = true;
       try {
-        setData(await api(url,{signal:abort.signal}));
+        const signal = AbortSignal.any([abort.signal,AbortSignal.timeout(10000)]);
+        setData(await api(url,{signal}));
         setError('');
       } catch (error) {
         if (!abort.signal.aborted) setError(error.message);
@@ -298,9 +299,9 @@ function Statement({ text }) {
   </div>;
 }
 
-function ProblemDecoding({ steps, difficulty }) {
-  return <section className="decode-guide" aria-labelledby="decode-title">
-    <div className="problem-heading"><h1 id="decode-title">Decode the problem</h1><span className={`difficulty ${difficulty.toLowerCase()}`}>{difficulty}</span></div>
+function ProblemHints({ steps, difficulty }) {
+  return <section className="decode-guide" aria-labelledby="hints-title">
+    <div className="problem-heading"><h1 id="hints-title">Problem hints</h1><span className={`difficulty ${difficulty.toLowerCase()}`}>{difficulty}</span></div>
     <p className="decode-intro">Open one step at a time, then try your approach in the editor.</p>
     <ol className="decode-steps">
       {steps.map(({label,text}, index) => <li key={label}>
@@ -439,7 +440,7 @@ function Problem({ slug }) {
       setRunning(null);
     }
   }
-  const tabs = data?.decoding ? ['Description','Decode','Editorial','Submissions'] : ['Description','Editorial','Submissions'];
+  const tabs = data?.decoding ? ['Description','Hints','Editorial','Submissions'] : ['Description','Editorial','Submissions'];
   return <><Header compact backToDecode={decoding}/><main className="solve" ref={workspace} style={{'--left':width[0]+'%'}}>
     <section className="statement pane" aria-label="Problem statement">
       <div className="editor-toolbar" role="group" aria-label="Problem views">{tabs.map(name => <button key={name} type="button" className="solver-tab" aria-pressed={tab===name} onClick={() => setTab(name)}>{name}
@@ -462,7 +463,7 @@ function Problem({ slug }) {
             </section>)}
             {data.topics?.length > 0 && <div className="problem-topics"><h2>Topics</h2><ul>{data.topics.map(topic => <li key={topic}>{topic}</li>)}</ul></div>}
           </>}
-          {tab === 'Decode' && data.decoding && <ProblemDecoding steps={data.decoding} difficulty={data.difficulty}/>}
+          {tab === 'Hints' && data.decoding && <ProblemHints steps={data.decoding} difficulty={data.difficulty}/>}
           {tab === 'Editorial' && <Editorial problem={data} contestLink={contest ? `/arena/problems/${slug}` : null}/>}
           {tab === 'Submissions' && <><h1>Submissions</h1>{history.length ? <ol className="submission-history">{history.map(item => <li key={item.id}><span>{verdictText(item)}</span><small>{item.language} · {new Date(item.created_at).toLocaleTimeString()}</small></li>)}</ol> : <p>No submissions in this browser session.</p>}</>}
         </motion.div></AnimatePresence> : error ? <p role="alert">{error}</p> : <LoadingState label="Loading problem…"/>}

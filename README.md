@@ -23,7 +23,7 @@ values = list(map(int, sys.stdin.read().split()))
 print(sum(values[1:]))
 ```
 
-Use **Run** for custom input and **Submit** to grade against the test bank. The editor stays in a screen-fit workspace with keyboard-operable splitters, internal scrolling and separate Description, Decode, Editorial and Submissions views in practice.
+Use **Run** for custom input and **Submit** to grade against the test bank. The editor stays in a screen-fit workspace with keyboard-operable splitters, internal scrolling and separate Description, Hints, Editorial and Submissions views in standard practice.
 
 ```sh
 docker compose exec web npm run db:seed
@@ -97,7 +97,7 @@ node scripts/smoke.mjs
 
 The judge uses a skeleton while fetching content, a queue bar with unknown duration, a compile spinner, and case progress from the worker. CSS animations respect reduced motion.
 
-Each Arena problem has three **Decode** steps. Easy walks through the goal and a small example. Medium starts from a direct approach and reveals an optimization. Hard connects the model and invariant to the constraints. Practice mode exposes the guide alongside the full editorial.
+Standard practice problems have three **Hints** steps. Easy walks through the goal and a small example. Medium starts from a direct approach and reveals an optimization. Hard connects the model and invariant to the constraints. Practice mode exposes the guide alongside the full editorial.
 
 Decode focuses on repairing supplied implementations. The default lists and direct question links work without choosing a topic. The web server provides public statements, samples and starter source when the judge services are unavailable. Execution and verified progress require the judge.
 
