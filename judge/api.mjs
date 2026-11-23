@@ -1,4 +1,5 @@
 import { createHmac, randomUUID, randomBytes, timingSafeEqual } from 'node:crypto';
+import { getProblemDecoding } from './problem-decoding.mjs';
 import { db, enqueue, readObject, transaction } from './services.mjs';
 
 const signingKey = process.env.SESSION_SECRET || randomBytes(32);
@@ -185,6 +186,7 @@ export async function handle(req,res,path) {
     if (slug) {
       const detail = await problemDetail(slug);
       if (new URL(req.url,'http://localhost').searchParams.has('contest')) delete detail.editorial_md;
+      else detail.decoding = getProblemDecoding(slug,detail.difficulty);
       return json(res,200,detail);
     }
     if (path === '/api/contests') {

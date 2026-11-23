@@ -23,7 +23,7 @@ values = list(map(int, sys.stdin.read().split()))
 print(sum(values[1:]))
 ```
 
-Use **Run** for custom input and **Submit** to grade against the test bank. The editor stays in a screen-fit workspace with keyboard-operable splitters, internal scrolling and separate Description, Editorial and Submissions views.
+Use **Run** for custom input and **Submit** to grade against the test bank. The editor stays in a screen-fit workspace with keyboard-operable splitters, internal scrolling and separate Description, Decode, Editorial and Submissions views in practice.
 
 ```sh
 docker compose exec web npm run db:seed
@@ -92,7 +92,9 @@ npm run build:arena
 node scripts/smoke.mjs
 ```
 
-The [Arena loading gallery](http://127.0.0.1:4173/arena/motion) contains 20 motion previews. Each runs on demand and stops after four seconds. The judge uses a skeleton while fetching content, a queue bar with unknown duration, a compile spinner, and case progress from the worker. CSS animations respect reduced motion.
+The judge uses a skeleton while fetching content, a queue bar with unknown duration, a compile spinner, and case progress from the worker. CSS animations respect reduced motion.
+
+Each Arena problem has three **Decode** steps. Easy walks through the goal and a small example. Medium starts from a direct approach and reveals an optimization. Hard connects the model and invariant to the constraints. Practice mode exposes the guide alongside the full editorial.
 
 The Arena library includes original variations of common patterns such as sliding windows, prefix sums, monotonic stacks, and topological sorting. It links to selected LeetCode and CodeChef exercises for additional practice.
 

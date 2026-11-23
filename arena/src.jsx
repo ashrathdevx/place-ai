@@ -1,10 +1,9 @@
 import { useEffect,useRef,useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AnimatePresence,MotionConfig,motion } from 'framer-motion';
-import '@fontsource-variable/inter';
 import '@fontsource-variable/jetbrains-mono';
 import './workspace.css';
-import { Indicator, Meter, MotionGallery } from './loading.jsx';
+import { Indicator, Meter } from './loading.jsx';
 
 const path = location.pathname.replace(/\/$/,'');
 const parts = path.split('/');
@@ -122,7 +121,7 @@ function ArenaHome() {
   const solved = problems.data?.filter(item => item.solved).length;
   return <><Header/><main className="wrap arena-page">
     <div className="arena-intro">
-      <div><h1>Coding Arena</h1><p>Practice by topic, test your code, and compete on a live leaderboard.</p></div>
+      <div><h1>Coding Arena</h1><p>Practice by topic, get a hint when you’re stuck, and compete on a live leaderboard.</p></div>
       <a className="button secondary small" href="#contests">Browse contests ↓</a>
     </div>
     <div className="arena-catalog">
@@ -148,7 +147,6 @@ function ArenaHome() {
           </li>)}</ul>
         </section>
         <details className="arena-card arena-technical" onToggle={event => setPipelineOpen(event.currentTarget.open)}><summary>How judging works</summary>{pipelineOpen && <Pipeline/>}</details>
-        <a className="arena-motion-link" href="/arena/motion">Loading patterns ↗</a>
       </aside>
     </div></main></>;
 }
@@ -209,7 +207,7 @@ function Monaco({ value,onChange,language }) {
         if (!mounted) return;
         editor.current = window.monaco.editor.create(root.current,{
           value:latest.current.value,language:latest.current.language,theme:'vs',
-          automaticLayout:true,minimap:{enabled:false},fontSize:14,tabSize:4,
+          automaticLayout:true,minimap:{enabled:false},fontSize:Math.round(parseFloat(getComputedStyle(document.documentElement).fontSize) * .9375),tabSize:4,
           padding:{top:12},scrollBeyondLastLine:false,fontFamily:'JetBrains Mono Variable, monospace',
           ariaLabel:'Solution code',bracketPairColorization:{enabled:true},
         });
@@ -270,6 +268,21 @@ function Statement({ text }) {
       </section>;
     })}
   </div>;
+}
+
+function ProblemDecoding({ steps, difficulty }) {
+  return <section className="decode-guide" aria-labelledby="decode-title">
+    <div className="problem-heading"><h1 id="decode-title">Decode the problem</h1><span className={`difficulty ${difficulty.toLowerCase()}`}>{difficulty}</span></div>
+    <p className="decode-intro">Open one step at a time, then try your approach in the editor.</p>
+    <ol className="decode-steps">
+      {steps.map(({label,text}, index) => <li key={label}>
+        <details open={index === 0 ? true : undefined}>
+          <summary>{label}</summary>
+          <p>{text}</p>
+        </details>
+      </li>)}
+    </ol>
+  </section>;
 }
 
 function Verdict({ result }) {
@@ -356,7 +369,7 @@ function Problem({ slug }) {
       setRunning(null);
     }
   }
-  const tabs = ['Description','Editorial','Submissions'];
+  const tabs = data?.decoding ? ['Description','Decode','Editorial','Submissions'] : ['Description','Editorial','Submissions'];
   return <><Header compact/><main className="solve" ref={workspace} style={{'--left':width[0]+'%'}}>
     <section className="statement pane" aria-label="Problem statement">
       <div className="editor-toolbar" role="group" aria-label="Problem views">{tabs.map(name => <button key={name} type="button" className="solver-tab" aria-pressed={tab===name} onClick={() => setTab(name)}>{name}
@@ -378,6 +391,7 @@ function Problem({ slug }) {
             </section>)}
             {data.topics?.length > 0 && <div className="problem-topics"><h2>Topics</h2><ul>{data.topics.map(topic => <li key={topic}>{topic}</li>)}</ul></div>}
           </>}
+          {tab === 'Decode' && data.decoding && <ProblemDecoding steps={data.decoding} difficulty={data.difficulty}/>}
           {tab === 'Editorial' && <><h1>Editorial</h1>{contest ? <p><a className="arena-back" href={`/arena/problems/${slug}`}>Open the practice version ↗</a></p> : <div className="editorial-copy">{data.editorial_md.split(/\n\n+/).map(paragraph => <p key={paragraph}>{paragraph}</p>)}</div>}</>}
           {tab === 'Submissions' && <><h1>Submissions</h1>{history.length ? <ol className="submission-history">{history.map(item => <li key={item.id}><span>{verdictText(item)}</span><small>{item.language} · {new Date(item.created_at).toLocaleTimeString()}</small></li>)}</ol> : <p>No submissions in this browser session.</p>}</>}
         </motion.div></AnimatePresence> : error ? <p role="alert">{error}</p> : <LoadingState label="Loading problem…"/>}
@@ -404,5 +418,5 @@ function Problem({ slug }) {
   </main></>;
 }
 
-const page = parts[2] === 'motion' ? <><Header/><MotionGallery/></> : working ? <Problem slug={parts[3]}/> : parts[2] === 'contests' ? <Contest slug={parts[3]}/> : <ArenaHome/>;
+const page = working ? <Problem slug={parts[3]}/> : parts[2] === 'contests' ? <Contest slug={parts[3]}/> : <ArenaHome/>;
 createRoot(document.querySelector('#arena')).render(<MotionConfig reducedMotion="user">{page}</MotionConfig>);
