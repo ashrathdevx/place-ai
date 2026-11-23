@@ -176,7 +176,10 @@ export async function handle(req,res,path) {
       return json(res,200,{active:true});
     }
     if (path === '/api/problems') {
-      const { rows } = await db.query('SELECT slug,title,difficulty,time_limit_ms,memory_limit_mb FROM problems ORDER BY id');
+      const user = session(req,res);
+      const { rows } = await db.query(`SELECT p.slug,p.title,p.difficulty,p.time_limit_ms,p.memory_limit_mb,
+        EXISTS (SELECT 1 FROM submissions s WHERE s.user_id=$1 AND s.problem_id=p.id AND s.verdict='AC' AND s.custom_input IS NULL) AS solved
+        FROM problems p ORDER BY p.id`,[user]);
       return json(res,200,rows);
     }
     if (slug) {

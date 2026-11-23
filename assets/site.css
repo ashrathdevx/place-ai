@@ -98,3 +98,30 @@ dialog{border:1px solid #d7e2f5;border-radius:15px;color:var(--text);background:
   .profile-overview .stats > div { padding:8px; }
   .profile-overview .stats span { font-size:.75rem; }
 }
+
+/* Practice and problem-library layout */
+.practice-banner { display:flex; justify-content:space-between; align-items:end; gap:22px; padding:32px; margin-bottom:22px; border:1px solid #d9e4fc; border-radius:24px; background:radial-gradient(ellipse at top right,#cadbff,#f7faff 60%); }
+.practice-banner .lede { margin-top:9px; }
+.practice-page .practice-banner h1 { font-size:clamp(2.6rem,5.7vw,4.9rem); }
+.practice-grid { display:grid; grid-template-columns:minmax(0,2.2fr) minmax(230px,.8fr); gap:16px; align-items:start; }
+.practice-sidebar { display:grid; gap:12px; }
+.practice-sidebar progress { height:8px; margin:12px 0; }
+.practice-controls { padding:20px 20px 10px; }
+.practice-controls h2 { margin-bottom:14px; }
+.practice-filters { display:grid; grid-template-columns:minmax(0,1.4fr) repeat(2,minmax(0,1fr)); gap:9px; margin-bottom:9px; }
+.practice-filters label { min-width:0; font-size:.83rem; }
+.practice-filters input, .practice-filters select { font-size:.9rem; }
+.practice-controls .chips { margin-bottom:3px; }
+.challenge-list { border-top:1px solid var(--border); }
+.challenge-row { display:grid; grid-template-columns:32px minmax(0,1fr) auto; align-items:center; gap:11px; padding:13px 20px; border-bottom:1px solid var(--border); }
+.challenge-row:nth-child(even) { background:#f8faff; }
+.challenge-row h3 { font-size:1.08rem; margin-bottom:4px; letter-spacing:-.02em; }
+.challenge-row p { font-size:.84rem; }
+.challenge-status { display:grid; place-items:center; width:30px; height:30px; border-radius:50%; background:#edf2fc; color:#4d638d; font-weight:800; }
+.challenge-status.solved { color:#086d4b; background:#e3f8ef; }
+.practice-count,.practice-empty { padding:11px 20px; font-size:.85rem; }
+.arena-library .practice-count { padding-inline:0; }
+.arena-library .activity-head { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:9px; }
+.arena-solved { color:var(--green); }
+@media(max-width:820px) { .practice-grid { grid-template-columns:minmax(0,1fr); } .practice-sidebar { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:560px) { .practice-banner { align-items:start; flex-direction:column; padding:22px; } .practice-sidebar { grid-template-columns:1fr; } .practice-filters { grid-template-columns:minmax(0,1fr) minmax(0,1fr); } .practice-filters label:first-child { grid-column:1/-1; } .challenge-row,.practice-controls { padding-inline:13px; } }

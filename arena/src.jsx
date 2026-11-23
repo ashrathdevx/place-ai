@@ -63,8 +63,22 @@ function useResource(url) {
 
 function ProblemList({ problems, context }) {
   return <div className="problem-list">{problems.map(item => <a className="problem-row" key={item.slug} href={`/arena/problems/${item.slug}${context ? '?contest=' + encodeURIComponent(context) : ''}`}>
-    <span><strong>{item.title}</strong>{item.time_limit_ms && <small>{item.time_limit_ms} ms · {item.memory_limit_mb} MB</small>}</span><span className={`difficulty ${item.difficulty.toLowerCase()}`}>{item.difficulty}</span>
+    <span><strong>{item.solved && <span className="arena-solved" role="img" aria-label="Solved">✓ </span>}{item.title}</strong>{item.time_limit_ms && <small>{item.time_limit_ms} ms · {item.memory_limit_mb} MB</small>}</span><span className={`difficulty ${item.difficulty.toLowerCase()}`}>{item.difficulty}</span>
   </a>)}</div>;
+}
+
+function ProblemBrowser({problems}) {
+  const [query,setQuery] = useState('');
+  const [level,setLevel] = useState('');
+  const [progress,setProgress] = useState('');
+  const solved = problems.filter(item => item.solved).length;
+  const shown = problems.filter(item => item.title.toLowerCase().includes(query.trim().toLowerCase()) &&
+    (!level || item.difficulty === level) && (!progress || item.solved === (progress === 'solved')));
+  return <div className="arena-library"><div className="activity-head"><h2>Problem library</h2><span>{solved} of {problems.length} solved</span></div>
+    <div className="practice-filters"><label>Search<input type="search" placeholder="Search problems" value={query} onChange={event => setQuery(event.target.value)}/></label>
+    <label>Difficulty<select value={level} onChange={event => setLevel(event.target.value)}><option value="">All levels</option>{['Easy','Medium','Hard'].map(value => <option key={value}>{value}</option>)}</select></label>
+    <label>Status<select value={progress} onChange={event => setProgress(event.target.value)}><option value="">All statuses</option><option value="solved">Solved</option><option value="todo">To do</option></select></label></div>
+    {shown.length ? <ProblemList problems={shown}/> : <p className="practice-empty">No problems match these filters.</p>}<p className="practice-count" role="status">Showing {shown.length} of {problems.length} problems</p></div>;
 }
 
 function ArenaHome() {
@@ -75,8 +89,8 @@ function ArenaHome() {
     <p className="lede">Solve DSA problems, watch your verdict arrive live, and turn practice into competition.</p>
     <div className="actions"><a className="button" href="#problems">Explore problems</a><a className="button secondary" href="#contests">View contests</a></div>
   </div><Pipeline/></div></section>
-  <div className="wrap arena-catalog"><section className="panel padded" id="problems"><h2>Problem library</h2>
-    {problems.data ? <ProblemList problems={problems.data}/> : <p role="status">{problems.error || 'Loading problems…'}</p>}</section>
+  <div className="wrap arena-catalog"><section className="panel padded" id="problems">
+    {problems.data ? <ProblemBrowser problems={problems.data}/> : <><h2>Problem library</h2><p role="status">{problems.error || 'Loading problems…'}</p></>}</section>
     <section className="panel padded" id="contests"><h2>Contests</h2>{contests.data?.map(item => <a key={item.slug} className="problem-row" href={`/arena/contests/${item.slug}`}><span><strong>{item.title}</strong><small>Ends {new Date(item.end_time).toLocaleString()}</small></span><span className="tag">View contest</span></a>)}
     {!contests.data && <p role="status">{contests.error || 'Loading contests…'}</p>}</section></div></main></>;
 }

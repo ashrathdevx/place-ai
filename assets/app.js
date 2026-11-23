@@ -158,17 +158,63 @@ function learn() {
 }
 
 function practice() {
-  main.innerHTML = `<div class="wrap page">${sectionIntro('Practice','Small challenges. Real progress.','Work through technical MCQs, coding output, debugging and practical questions. Other branches have starter theory exercises.')}
-    <div class="toolbar"><label>Engineering branch<select id="practice-branch">${branchOptions(state.branch)}</select></label><span id="practice-status" role="status"></span>${action('/arena','Open the coding arena','secondary')}</div>
-    <div id="challenges" class="cards"></div></div>`;
+  main.innerHTML = `<div class="wrap page practice-page">
+    <div class="practice-banner"><div><p class="eyebrow">Practice</p><h1>Find your next problem.</h1><p class="lede">Work through short challenges by branch or open the Arena for judged coding problems.</p></div>${action('/arena','Open Coding Arena')}</div>
+    <div class="practice-grid"><section class="panel practice-library" aria-labelledby="challenge-title">
+      <div class="practice-controls"><h2 id="challenge-title">Challenge library</h2>
+        <div class="practice-filters"><label>Search<input type="search" id="practice-search" placeholder="Search challenges"></label>
+        <label>Branch<select id="practice-branch">${branchOptions(state.branch)}</select></label>
+        <label>Status<select id="practice-completion"><option value="all">All statuses</option><option value="todo">To do</option><option value="done">Completed</option></select></label></div>
+        <div id="practice-types" class="chips" role="group" aria-label="Challenge type"></div></div>
+      <div id="challenges" class="challenge-list"></div><p class="practice-count" id="practice-count" role="status"></p></section>
+      <aside class="practice-sidebar"><section class="panel padded"><p class="eyebrow">Your progress</p><h2 id="practice-status"></h2>
+        <progress id="practice-progress" aria-label="Completed practice challenges"></progress>
+        <p>Correct answers add a record to your Skill Passport.</p>${action('/profile','View profile','secondary small')}</section>
+      <section class="panel padded"><p class="eyebrow">Coding problems</p><h2>Practice with a judge</h2><p>Submit C++ or Python and see how your code performs on the test cases.</p>${action('/arena#problems','Browse problems','secondary small')}</section></aside>
+    </div></div>`;
   const branch = main.querySelector('#practice-branch');
+  const search = main.querySelector('#practice-search');
+  const completion = main.querySelector('#practice-completion');
+  const types = main.querySelector('#practice-types');
   const list = main.querySelector('#challenges');
+  let category = '';
   const render = () => {
     const items = challenges.filter(item => item.branch === branch.value);
-    main.querySelector('#practice-status').textContent = `${items.filter(item => state.completed[item.id]).length} of ${items.length} complete`;
-    list.innerHTML = items.map(item => `<article class="panel padded"><div class="row"><span class="tag">${item.type}</span>${state.completed[item.id] ? '<span class="green">Completed</span>' : ''}</div><h2>${item.title}</h2><p class="muted">${item.prompt}</p><button class="button secondary" data-challenge="${item.id}">${state.completed[item.id] ? 'Review challenge' : 'Open challenge'}</button></article>`).join('');
+    const done = items.filter(item => state.completed[item.id]).length;
+    const progress = main.querySelector('#practice-progress');
+    progress.max = items.length || 1;
+    progress.value = done;
+    main.querySelector('#practice-status').textContent = `${done} of ${items.length} completed`;
+    const query = search.value.trim().toLowerCase();
+    const filtered = items.filter(item => {
+      const solved = Boolean(state.completed[item.id]);
+      return (!category || category === item.type)
+        && (completion.value === 'all' || solved === (completion.value === 'done'))
+        && (!query || (item.title+' '+item.type).toLowerCase().includes(query));
+    });
+    main.querySelector('#practice-count').textContent = `Showing ${filtered.length} of ${items.length} challenges`;
+    list.innerHTML = filtered.map(item => {
+      const solved = Boolean(state.completed[item.id]);
+      return `<article class="challenge-row"><span class="challenge-status ${solved ? 'solved' : ''}" role="img" aria-label="${solved ? 'Completed' : 'To do'}">${solved ? icon('check') : '○'}</span>
+        <div><h3>${item.title}</h3><p>${item.type}</p></div>
+        <button class="button secondary small" data-challenge="${item.id}" aria-label="${solved ? 'Review' : 'Open'} ${item.title}">${solved ? 'Review' : 'Open'}</button></article>`;
+    }).join('') || '<p class="practice-empty">No challenges match these filters.</p>';
   };
-  branch.onchange = render;
+  const renderTypes = () => {
+    const options = [...new Set(challenges.filter(item => item.branch === branch.value).map(item => item.type))];
+    types.innerHTML = ['',...options].map(type => `<button class="chip" data-type="${type}" aria-pressed="${type === category}">${type || 'All challenges'}</button>`).join('');
+  };
+  branch.onchange = () => { category = ''; renderTypes(); render(); };
+  search.oninput = render;
+  completion.onchange = render;
+  types.onclick = event => {
+    const selected = event.target.closest('[data-type]');
+    if (!selected) return;
+    category = selected.dataset.type;
+    types.querySelectorAll('[data-type]').forEach(button => button.setAttribute('aria-pressed',String(button === selected)));
+    render();
+  };
+  renderTypes();
   list.onclick = event => {
     const button = event.target.closest('[data-challenge]');
     if (!button) return;
@@ -189,7 +235,7 @@ function practice() {
         }
         const dialogTrigger = button.dataset.challenge;
         render();
-        dialog.addEventListener('close', () => list.querySelector(`[data-challenge="${dialogTrigger}"]`)?.focus(), { once:true });
+        dialog.addEventListener('close', () => (list.querySelector(`[data-challenge="${dialogTrigger}"]`) ?? completion).focus(), { once:true });
       }
       dialog.querySelector('#answer-result').textContent = message;
     };
