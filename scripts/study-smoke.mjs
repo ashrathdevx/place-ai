@@ -54,6 +54,7 @@ try {
   await heading('The Missing Reading').waitFor();
   await page.getByRole('link',{name:'← Challenges'}).click();
   assert.match(page.url(),/view=saved/);
+  await page.locator('.problem-row').first().waitFor();
   assert.equal(await page.locator('.problem-row').count(),1);
   await link('Solve').click();
   await heading('Practice problems').waitFor();
