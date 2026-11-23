@@ -1,4 +1,4 @@
-export const filterKeys = ['q','topic','level','progress'];
+export const filterKeys = ['q','topic','level','progress','view'];
 
 export function catalogSearch(search) {
   const current = new URLSearchParams(search);

@@ -1,6 +1,6 @@
 # Place AI launch audit
 
-## Findings addressed in this change
+## Findings addressed to date
 
 | Area | Weak point | Change |
 | --- | --- | --- |

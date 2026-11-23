@@ -1,9 +1,9 @@
 FROM node:24-bookworm-slim AS dependencies
 WORKDIR /app
-COPY package*.json ./
-RUN npm install --no-audit --no-fund
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
 COPY arena ./arena
-COPY assets/theme.js ./assets/theme.js
+COPY assets/theme.js assets/study-plan.js assets/practice-state.js ./assets/
 COPY scripts/build-ui.mjs ./scripts/build-ui.mjs
 RUN npm run build:arena && npm prune --omit=dev
 

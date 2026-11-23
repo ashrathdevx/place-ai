@@ -1,9 +1,9 @@
 const profileSections = [
   ['identity','Identity','Photo, name and username','person'],
   ['personal','Personal details','Contact and regional preferences','globe'],
-  ['professional','Education & work','Background and technical skills','work'],
-  ['career','Career preferences','Target roles, links and résumé','target'],
-  ['privacy','Privacy & account','Profile visibility and connections','lock'],
+  ['professional','Education & career','Background, target role and technical skills','work'],
+  ['career','Links & evidence','Portfolio, LinkedIn and résumé','target'],
+  ['privacy','Privacy','Profile visibility and connections','lock'],
 ];
 const settingsIcons = {
   person:'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8v-2a7 7 0 0 1 14 0v2',
@@ -63,13 +63,12 @@ function fieldsFor(tab,ui) {
     ${input('Postal code','postalCode','maxlength="18" autocomplete="postal-code"')}
     </div><p class="settings-note">${settingsIcon('lock')} Contact details, date of birth, pronouns, postal code and time zone are saved on this device. Country or region can appear on your profile.</p>`;
   if (tab === 'professional') return `<div class="settings-fields">
-    ${select('Career stage','stage',stages)}${input('Institution or employer','college','maxlength="100" autocomplete="organization"')}
+    ${select('Career stage','stage',stages)}${input('Target role','role','maxlength="70" placeholder="e.g. Software developer"')}${select('Availability','availability',availability)}${input('Institution or employer','college','maxlength="100" autocomplete="organization"')}
     ${input('Degree or qualification','degree','maxlength="100"')}${input('Graduation year','graduationYear',`type="number" min="1900" max="${year+20}" step="1"`)}
     ${input('CGPA out of 10','cgpa','type="number" min="0" max="10" step="0.01"')}${input('Coding since','codingSince',`type="number" min="1900" max="${year}" step="1"`)}
     ${select('Preferred programming language','preferredLanguage',['C++','Python','Java','JavaScript','TypeScript','C','SQL','Other'])}${input('Other programming languages','languages','maxlength="100" placeholder="e.g. Python, SQL"')}
     </div>`;
   if (tab === 'career') return `<div class="settings-fields">
-    ${input('Target role','role','maxlength="70" placeholder="e.g. Software developer"')}${select('Availability','availability',availability)}
     ${input('LinkedIn profile','linkedin','type="url" maxlength="500" placeholder="https://www.linkedin.com/in/…"')}${input('Portfolio website','portfolio','type="url" maxlength="500" placeholder="https://…"')}
     </div><div class="resume-settings"><div><h3>Résumé</h3><p id="resume-status" role="status">Attach a PDF up to 2 MB for your own use.</p></div><div class="photo-actions">
     <label class="button secondary small photo-picker">Choose PDF<input type="file" id="resume-file" aria-label="Choose résumé PDF" accept="application/pdf,.pdf"></label>

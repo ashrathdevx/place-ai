@@ -1,6 +1,8 @@
 import { setTheme, themePreference } from './theme.js';
+import { cseTrack, challengeUrl, continueStudy, moduleProgress } from './study-plan.js';
+import { practiceState, rememberLesson, reviewReason, studyProgress, updatePractice } from './practice-state.js';
 import { watchArenaProgress } from './live-progress.js';
-import { activityGrid, attachLiveEvidence, renderPassport } from './profile.js';
+import { attachLiveEvidence, attachPassportNavigation, renderPassport } from './profile.js';
 import { openProfileSettings } from './profile-settings.js';
 import { branches, challenges, starterListings, platforms, evidenceTypes } from './data.js';
 
@@ -40,7 +42,7 @@ const localStatus = (message, stored) => stored ? message : `${message} Browser 
 const main = document.querySelector('main');
 const dialog = document.querySelector('#dialog');
 const route = location.pathname.replace(/\/$/, '') || '/';
-const navigation = [['/learn','Learn'],['/practice','Practice'],['/placements','Placements'],['/arena','Arena'],['/arena/decode','Decode'],['/marketplace','Marketplace'],['/proof','Evidence Engine']];
+const navigation = [['/learn','Learn'],['/practice','Practice'],['/placements','Placements'],['/arena','Arena'],['/marketplace','Marketplace'],['/proof','Evidence Engine']];
 const brand = `<a class="brand" href="/" aria-label="Place AI home"><img src="/assets/mark.svg" alt="" width="33" height="33"> Place<span>AI</span></a>`;
 const nav = navigation.map(([link,label]) => `<a href="${link}" ${route === link || (route.startsWith(link + '/') && !navigation.some(([candidate]) => candidate !== link && (route === candidate || route.startsWith(candidate + '/')))) ? 'aria-current="page"' : ''}>${label}</a>`).join('');
 document.querySelector('#header').innerHTML = `<div class="wrap header-inner">${brand}<nav id="nav" aria-label="Main navigation">${nav}</nav><a href="/profile" class="button small header-cta" ${route.startsWith('/profile') ? 'aria-current="page"' : ''}>Skill Passport</a><label class="theme-control"><span class="sr-only">Theme</span><select id="site-theme" aria-label="Theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label><button id="menu" class="button small secondary" type="button" aria-expanded="false" aria-controls="nav">Menu</button></div>`;
@@ -59,54 +61,89 @@ const action = (link, label, style = '') => `<a class="button ${style}" href="${
 const sectionIntro = (label, title, text) => `<div class="page-intro"><p class="eyebrow">${label}</p><h1>${title}</h1><p class="lede">${text}</p></div>`;
 const avatar = (name) => `<span class="avatar" aria-hidden="true">${html(name.trim().split(/\s+/).slice(0,2).map(part => part[0]).join('').toUpperCase() || 'PA')}</span>`;
 const stat = (value, label) => `<div><strong>${value}</strong><span>${label}</span></div>`;
-const demoCard = () => `<article class="preview panel">
-  <div class="preview-top"><span>${icon('shield')} Skill Passport</span><span class="tag">Sample profile</span></div>
-  <div class="identity">${avatar('Synexis')}<div><h2>Synexis</h2><p>Student developer · CSE</p></div></div>
-  <div class="stats">${stat('180','Python problems')}${stat('120','SQL problems')}${stat('18','Recorded projects')}</div>
-  <div class="hero-activity">${activityGrid(Array.from({length:84},(_,i) => ({date:new Date(Date.UTC(2026,10,23+i-83)).toISOString().slice(0,10),count:i%5 === 0 ? 0 : (i*i+i)%7})),true)}</div>
-  <a class="preview-bottom" href="/proof/demo">Open Synexis’s passport ${icon('up')}</a>
-</article>`;
-
 function home() {
+  const firstModule = cseTrack[0];
+  const sampleChallenge = challengeUrl(firstModule.id,firstModule.challenge);
   const steps = [
-    ['spark','Learn','Find a roadmap','Get a branch-specific plan and see which skills to work on next.','/learn'],
-    ['code','Build','Practice and build','Solve mini challenges and turn your projects into portfolio evidence.','/practice'],
-    ['bag','Get placed','Prepare for interviews','Track application prep and share your work with recruiters.','/placements'],
-    ['shop','Marketplace','Explore student resources','Browse sample resources and draft your own listing.','/marketplace'],
+    ['spark','Learn','Follow a study plan','Trace a worked example, then open the two repairs for that module.','/learn','Explore Learn'],
+    ['code','Decode','Repair a real program','Run the sample, test an edge case, and submit your fix against hidden tests.','/arena/decode','Browse Decode'],
+    ['shield','Skill Passport','See what you’ve earned','Review the challenge, language, date, and verdict behind each accepted repair.','/profile','Open Skill Passport'],
   ];
   main.innerHTML = `
-    <section class="hero"><div class="hero-grid" aria-hidden="true"></div><div class="wrap hero-inner">
-      <div class="hero-copy"><p class="eyebrow"><span class="dot"></span> Placement preparation for engineering students</p>
-        <h1>Learn to debug real code.</h1>
-        <p class="lede">Repair complete programs in C, C++, or Python, then add accepted fixes to your Skill Passport.</p>
-        <div class="actions">${action('/arena/decode','Browse challenges')}</div>
-      </div>
-      <div class="hero-art"><span class="orbit orbit-one" aria-hidden="true"></span><span class="orbit orbit-two" aria-hidden="true"></span>${demoCard()}</div>
-    </div></section>
-    <section class="wrap journey">
-      <div class="section-heading"><div><p class="eyebrow">The student journey</p><h2>Your placement toolkit.</h2></div><p>Start with CSE or explore starter tracks for ECE, EEE, Mechanical and Civil.</p></div>
-      <div class="journey-grid">${steps.map(([symbol, label, title, text, link]) => `<a class="panel journey-card spotlight" href="${link}"><span class="tile-icon">${icon(symbol)}</span><span class="step-label">${label}</span><h3>${title}</h3><p>${text}</p></a>`).join('')}</div>
-    </section>
-    <section class="wrap home-proof"><div class="panel proof-callout"><div><p class="eyebrow">${icon('shield')} Evidence Engine</p><h2>Give every skill<br>something to show.</h2><p>See what you solved, what you shipped and where each record came from.</p>${action('/proof','Explore Evidence Engine','secondary')}</div><ul class="proof-points"><li>${icon('code')} <div><strong>Practice results</strong><span>Challenge outcomes and assessment history</span></div></li><li>${icon('layers')} <div><strong>Projects and experience</strong><span>Portfolio work, internships and credentials</span></div></li><li>${icon('link')} <div><strong>External sources</strong><span>GitHub, LinkedIn and coding profiles</span></div></li></ul></div>
-    <div class="landing-pipeline"><div class="pipeline-copy"><h2>Debug real code.</h2><p>Start with a buggy C, C++, or Python program. Run it, fix the logic, and add the accepted result to your Skill Passport.</p>${action('/arena/decode','Open Decode','secondary')}</div><div class="canvas" aria-hidden="true" id="landing-graph"></div></div></section>`;
-  const graph = document.querySelector('#landing-graph');
-  let disposeGraph;
-  let active = true;
-  const observer = new IntersectionObserver(entries => {
-    if (!entries.some(entry => entry.isIntersecting)) return;
-    observer.disconnect();
-    import('/vendor/pipeline.js').then(({mountPipeline}) => {
-      if (active) disposeGraph = mountPipeline(graph);
-    }).catch(() => {});
-  }, {rootMargin:'90px'});
-  observer.observe(graph);
-  window.addEventListener('pagehide', () => { active = false; observer.disconnect(); disposeGraph?.(); }, {once:true});
-  if (!matchMedia('(pointer: coarse)').matches) {
-    main.querySelectorAll('.spotlight').forEach(card => card.addEventListener('pointermove', event => {
-      const rect = card.getBoundingClientRect();
-      card.style.setProperty('--x', `${event.clientX - rect.left}px`);
-      card.style.setProperty('--y', `${event.clientY - rect.top}px`);
-    }));
+    <div class="landing">
+      <section class="landing-hero" aria-labelledby="landing-title">
+        <div class="wrap landing-hero-layout">
+          <div class="landing-intro">
+            <p class="eyebrow">CSE Debugging Foundations</p>
+            <h1 id="landing-title">Learn to debug real code.</h1>
+            <p class="lede">Follow a study plan, repair complete programs in C, C++, or Python, and see your accepted fixes in your Skill Passport.</p>
+            <div class="actions">${action('/learn','Start learning')}${action('/arena/decode','Browse challenges','secondary')}</div>
+          </div>
+          <article class="panel landing-example" aria-labelledby="example-title">
+            <header class="landing-example-header">
+              <div><p>Decode example</p><h2 id="example-title">The Missing Reading</h2></div>
+              <span class="tag">Python 3</span>
+            </header>
+            <div class="landing-example-body">
+              <div class="landing-example-controls" role="group" aria-label="Code example">
+                <button type="button" aria-pressed="true" data-example="starter">Buggy starter</button>
+                <button type="button" aria-pressed="false" data-example="fix">Example fix</button>
+              </div>
+              <pre class="landing-code" aria-label="Python example"><code><span class="landing-code-comment"># Include every reading</span>
+<span class="landing-code-keyword">return</span> <span class="landing-code-function">sum</span>(a[<span data-example-range>1:-1</span>])</code></pre>
+              <dl class="landing-sample">
+                <div><dt>Sample input</dt><dd>4 2 -3 8 1</dd></div>
+                <div><dt>Output</dt><dd data-example-output>7</dd></div>
+                <div><dt>Expected</dt><dd>8</dd></div>
+              </dl>
+              <p class="landing-example-result" data-example-result role="status">The slice skips the final reading.</p>
+            </div>
+            <a class="landing-example-link" href="${sampleChallenge}">Try this challenge <span aria-hidden="true">↗</span></a>
+          </article>
+        </div>
+      </section>
+
+      <section class="wrap landing-path" aria-labelledby="landing-path-title">
+        <h2 id="landing-path-title">From your first lesson to your first accepted fix</h2>
+        <ol class="landing-path-grid">${steps.map(([symbol,label,title,copy,link,linkLabel]) => `
+          <li class="panel landing-step">
+            <p class="landing-step-label"><span class="tile-icon">${icon(symbol)}</span>${label}</p>
+            <h3>${title}</h3><p>${copy}</p>
+            <a href="${link}">${linkLabel} <span aria-hidden="true">→</span></a>
+          </li>`).join('')}</ol>
+      </section>
+
+      <section class="wrap landing-details" aria-label="Study track and Skill Passport">
+        <article class="panel landing-detail">
+          <h2>What you’ll practise</h2>
+          <p>Each module has a worked example and two judged repairs. Both must be accepted to complete the module.</p>
+          <ul class="landing-modules">${cseTrack.map(module => `<li><a href="/learn?lesson=${module.id}">${module.title}<span aria-hidden="true"> →</span></a></li>`).join('')}</ul>
+        </article>
+        <article class="panel landing-detail">
+          <h2>Keep a record of your progress</h2>
+          <p>Your Skill Passport groups your practice into Overview, Activity, and Evidence. Open a record to revisit the challenge behind it.</p>
+          <dl class="landing-passport" aria-label="Example accepted record">
+            <div><dt>Challenge</dt><dd>The Missing Reading</dd></div>
+            <div><dt>Language</dt><dd>Python 3</dd></div>
+            <div><dt>Verdict</dt><dd class="landing-result-pass">Accepted</dd></div>
+          </dl>
+          ${action('/proof/demo','View sample Passport','secondary')}
+        </article>
+      </section>
+    </div>`;
+  const controls = [...main.querySelectorAll('[data-example]')];
+  const range = main.querySelector('[data-example-range]');
+  const output = main.querySelector('[data-example-output]');
+  const result = main.querySelector('[data-example-result]');
+  for (const control of controls) {
+    control.onclick = () => {
+      const fixed = control.dataset.example === 'fix';
+      for (const button of controls) button.setAttribute('aria-pressed',String(button === control));
+      range.textContent = fixed ? '1:' : '1:-1';
+      output.textContent = fixed ? '8' : '7';
+      result.textContent = fixed ? 'The output matches this sample.' : 'The slice skips the final reading.';
+      result.classList.toggle('landing-result-pass',fixed);
+    };
   }
 }
 
@@ -121,47 +158,74 @@ function showDialog(title, content) {
 const flash = (message) => { document.querySelector('#status').textContent = message; };
 
 function learn() {
-  let selection = state.branch;
-  const years = ['Year 1','Year 2','Year 3','Year 4'];
-  main.innerHTML = `<div class="wrap page">
-    ${sectionIntro('Learn','Find your next step.','Build a starter roadmap around your engineering branch, college year and the skills you already have.')}
-    <div class="workspace"><form id="roadmap" class="panel padded form"><h2>Career coach</h2><p class="muted">Roadmaps use curated track rules in this prototype.</p>
-    <label>Engineering branch<select name="branch">${branchOptions(selection)}</select></label>
-    <label>College year<select name="year">${years.map(year => `<option ${year === state.roadmap?.year ? 'selected' : ''}>${year}</option>`).join('')}</select></label>
-    <label>Target role<select name="role"></select></label><fieldset><legend>Skills you already have</legend><div id="known" class="checkbox-group"></div></fieldset>
-    <button class="button" type="submit">Build my roadmap</button></form><section id="plan" class="panel padded" aria-live="polite"></section></div></div>`;
-  const form = main.querySelector('form');
-  const populate = () => {
-    const track = branches[selection];
-    const saved = state.roadmap?.branch === selection ? state.roadmap : null;
-    form.elements.role.innerHTML = track.roles.map(role => `<option ${role === saved?.role ? 'selected' : ''}>${role}</option>`).join('');
-    form.querySelector('#known').innerHTML = track.skills.map(skill => `<label><input type="checkbox" name="known" value="${skill}" ${saved?.known.includes(skill) ? 'checked' : ''}> ${skill}</label>`).join('');
+  const lesson = cseTrack.find(item => item.id === new URLSearchParams(location.search).get('lesson'));
+  if (lesson) rememberLesson(lesson.id);
+  main.innerHTML = `<div class="wrap page study-page">
+    ${sectionIntro('Learn','CSE Debugging Foundations','Practise tracing code, testing edge cases, and fixing logic bugs.')}
+    <div id="study-resume" class="actions"></div>
+    ${lesson ? `<article class="panel padded study-lesson"><a href="/learn">← Study plan</a><h2>${lesson.title}</h2><p>${lesson.concept}</p>
+      <h3>Worked example</h3><p>${lesson.example}</p><p>${lesson.goal}</p><div class="actions">
+      ${action(challengeUrl(lesson.id,lesson.challenge),'Open Decode challenge')}
+      ${action(challengeUrl(lesson.id,lesson.followUp),'Open follow-up','secondary')}</div></article>` : ''}
+    <section aria-labelledby="study-modules"><h2 id="study-modules">Modules</h2><p>Complete both accepted repairs in a module to finish it.</p><ol id="module-list" class="study-list"></ol></section>
+    <section class="panel padded" id="study-review" aria-labelledby="review-title"><h2 id="review-title" tabindex="-1">Review queue</h2><div id="review-list"></div></section>
+    <details class="panel padded" id="study-settings"><summary>Edit study plan</summary><form class="form">
+      <label>Engineering branch<select name="branch">${branchOptions(state.roadmap?.branch ?? state.branch)}</select></label>
+      <label>College year<select name="year">${['Year 1','Year 2','Year 3','Year 4'].map(year => `<option${year === state.roadmap?.year ? ' selected' : ''}>${year}</option>`).join('')}</select></label>
+      <label>Target role<select name="role"></select></label><p>CSE Debugging Foundations is available to every branch.</p>
+      <button class="button secondary" type="submit">Save study preferences</button><p role="status"></p></form></details></div>`;
+  const form = main.querySelector('#study-settings form');
+  const roles = () => {
+    form.elements.role.innerHTML = branches[form.elements.branch.value].roles.map(role => `<option${role === state.roadmap?.role ? ' selected' : ''}>${html(role)}</option>`).join('');
   };
-  const renderPlan = (config, message = '') => {
-    const { branch, role, year, known } = config;
-    const track = branches[branch];
-    const roleFocus = {
-      'Software engineer':'Build a small app and write tests for its core logic.',
-      'Backend developer':'Document your API endpoints and test common failure cases.',
-      'Data analyst':'Use SQL to answer a question and summarize the result in a chart.',
-    };
-    const missing = track.skills.filter(skill => !known.includes(skill));
-    const nextSkills = missing.slice(0, year === 'Year 1' ? 2 : 3);
-    main.querySelector('#plan').innerHTML = `<p class="eyebrow">${html(branch)} · ${html(year)}</p><h2>${html(role)} roadmap</h2>
-      <p class="muted" role="status">${html(message)}</p><ol class="roadmap-list"><li><strong>Close your skill gaps</strong><p>${nextSkills.length ? html(nextSkills.join(' · ')) : 'Review your skills in a timed practice session.'}</p></li>
-      <li><strong>Build a project</strong><p>${track.project} ${roleFocus[role] ?? ''}</p></li>
-      <li><strong>Capture evidence</strong><p>${year === 'Year 4' ? 'Pair your strongest project with a practice result and prepare an interview walkthrough.' : 'Record your decisions, tests and what you learned in your Skill Passport.'}</p></li></ol>${action('/practice','Go to practice','secondary')}`;
-  };
-  form.elements.branch.onchange = () => { selection = form.elements.branch.value; populate(); };
+  roles();
+  form.elements.branch.onchange = roles;
   form.onsubmit = event => {
     event.preventDefault();
-    const values = new FormData(form);
-    state.branch = selection;
-    state.roadmap = { branch:selection, year:values.get('year'), role:values.get('role'), known:values.getAll('known') };
-    renderPlan(state.roadmap, localStatus('Roadmap updated.', save()));
+    const fields = Object.fromEntries(new FormData(form));
+    state.branch = fields.branch;
+    state.roadmap = {...state.roadmap,...fields};
+    form.querySelector('[role="status"]').textContent = localStatus('Study preferences saved.',save());
   };
-  populate();
-  renderPlan(state.roadmap ?? { branch:selection, role:branches[selection].roles[0], year:'Year 1', known:[] });
+  let catalog = [];
+  const render = () => {
+    const progress = studyProgress();
+    const resume = continueStudy(catalog,progress);
+    const accepted = new Set(catalog.filter(item => item.solved === true).map(item => item.slug));
+    main.querySelector('#study-resume').innerHTML = action(resume.url,resume.label);
+    main.querySelector('#module-list').innerHTML = cseTrack.map(module => {
+      const status = moduleProgress(module,catalog,progress.visited ?? []);
+      return `<li class="panel padded"><div><h3><a href="/learn?lesson=${module.id}">${module.title}</a></h3><span class="tag">${status}</span></div>
+        <p>${module.goal}</p><div class="study-links"><a href="${challengeUrl(module.id,module.challenge)}">Decode challenge</a>${accepted.has(module.challenge) ? '<span class="tag">Accepted</span>' : ''}
+        <a href="${challengeUrl(module.id,module.followUp)}">Follow-up</a>${accepted.has(module.followUp) ? '<span class="tag">Accepted</span>' : ''}</div></li>`;
+    }).join('');
+    const bySlug = new Map(catalog.filter(item => item.kind === 'decode' && item.solved !== true).map(item => [item.slug,item]));
+    main.querySelector('#review-list').innerHTML = Object.entries(practiceState()).flatMap(([slug,item]) => {
+      const reason = reviewReason(item);
+      const problem = bySlug.get(slug);
+      return reason && problem ? [`<p><a href="/arena/problems/${encodeURIComponent(slug)}">${html(problem.title)}</a> · ${reason}
+        <button type="button" class="button secondary small" data-skip="${html(slug)}">Skip</button></p>`] : [];
+    }).join('') || '<p>No challenges to review yet.</p>';
+  };
+  main.querySelector('#review-list').onclick = event => {
+    const skip = event.target.closest('[data-skip]');
+    if (!skip) return;
+    updatePractice(skip.dataset.skip,item => ({...item,skipped:true}));
+    render();
+    (main.querySelector('#review-list button') ?? main.querySelector('#study-review h2')).focus();
+  };
+  async function refresh() {
+    try {
+      const response = await fetch('/api/problems');
+      if (!response.ok) return;
+      const next = await response.json();
+      if (JSON.stringify(next) !== JSON.stringify(catalog)) { catalog = next; render(); }
+    } catch { /* Study content stays available without the judge. */ }
+  }
+  render();
+  void refresh();
+  window.addEventListener('pageshow',event => { if (event.persisted) void refresh(); });
+  window.addEventListener('storage',event => { if (event.key === 'place-ai:judge-verdict') void refresh(); });
 }
 
 function practice() {
@@ -377,6 +441,7 @@ function proof() {
 
 function samplePassport() {
   renderPassport(main,{name:'Synexis',role:'Student developer · CSE',college:'Demo Engineering College',cgpa:'9.1',languages:'C++, Java, Python, SQL',username:'synexis',stage:'Student',country:'India',bio:'I build small tools, practice algorithms and document what I learn.',availability:'Open to internships'},profileUI,true);
+  attachPassportNavigation(main);
   main.querySelector('#share').onclick = async () => {
     const url = new URL('/proof/demo', location.origin).href;
     showDialog('Share sample career card', `<p class="muted">${['127.0.0.1','localhost'].includes(location.hostname) ? 'This preview URL opens on this computer. A hosted URL is needed for other devices.' : 'Share this URL in a résumé, portfolio or application.'}</p><label class="form">Sample passport URL<input id="share-url" readonly value="${html(url)}"></label><div id="qr" class="qr"></div>
@@ -403,9 +468,11 @@ function samplePassport() {
 
 const profileUI = { action, avatar, dialog, html, showDialog, stat, validatedUrl };
 function profile() {
-  renderPassport(main,state.profile,profileUI);
+  const preview = new URLSearchParams(location.search).get('preview') === '1';
+  renderPassport(main,state.profile,profileUI,false,preview);
+  attachPassportNavigation(main);
   const evidenceList = main.querySelector('#profile-evidence');
-  const render = () => { evidenceList.innerHTML = state.evidence.map(evidenceRow).join('') || '<p class="muted">No evidence added yet.</p>'; };
+  const render = () => { evidenceList.innerHTML = '<h3>Self-added projects and external links</h3>'+(state.evidence.map(evidenceRow).join('') || '<p class="muted">No evidence added yet.</p>'); };
   const addEvidence = suggestedPlatform => {
     showDialog('Add evidence', `<form class="form">
       <label>Record type<select name="type">${evidenceTypes.map(type => `<option>${type}</option>`).join('')}</select></label>
@@ -443,9 +510,10 @@ function profile() {
       main.dispatchEvent(new Event('passport:changed'));
     };
   };
-  main.querySelector('#add-evidence').onclick = () => addEvidence();
+  const add = main.querySelector('#add-evidence');
+  if (add) add.onclick = () => addEvidence();
   render();
-  void attachLiveEvidence(main,state,{...profileUI,addEvidence});
+  void attachLiveEvidence(main,state,{...profileUI,addEvidence},{preview});
 }
 
 const pages = {
