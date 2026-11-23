@@ -22,7 +22,8 @@ async function submitFix(slug) {
   await page.evaluate(source => window.monaco.editor.getModels().find(model => model.getLanguageId() === 'place-python').setValue(source),
     catalogBySlug.get(slug).programs.python.reference);
   await button('Submit Fix').click({timeout:20000});
-  await page.getByLabel('Verdict',{exact:true}).getByText('Accepted',{exact:true}).waitFor({timeout:30000});
+  await page.locator('.verdict-AC').waitFor({timeout:30000});
+  assert.match(await page.locator('.verdict-AC').innerText(),/Accepted/);
 }
 
 try {
@@ -61,14 +62,17 @@ try {
   await link('Contests').click();
   await heading('Contest schedule').waitFor();
 
+  console.log('Study navigation, review queue and saved challenge views passed.');
   if (process.env.PLACE_OFFLINE_TEST !== '1') {
     await go('/learn?lesson=arrays');
     await link('Open Decode challenge').click();
     await button('Run').click({timeout:20000});
     await page.getByText('Different from the example.',{exact:false}).waitFor({timeout:30000});
     await button('Submit Fix').click();
-    await page.getByLabel('Verdict',{exact:true}).getByText('Wrong Answer',{exact:true}).waitFor({timeout:30000});
+    await page.locator('.verdict-WA').waitFor({timeout:30000});
+    assert.match(await page.locator('.verdict-WA').innerText(),/Wrong Answer/);
     await submitFix(primary);
+    console.log('The live judge rejected the starter and accepted the first repair.');
     await button('Review my fix').click();
     await heading('Accepted attempt').waitFor();
     await button('Compare with accepted').click();
