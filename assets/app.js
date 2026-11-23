@@ -147,6 +147,9 @@ function home() {
   }
 }
 
+const branchOptions = (current, extra = []) => [...extra, ...Object.keys(branches)].map(branch => `<option ${branch === current ? 'selected' : ''}>${branch}</option>`).join('');
+const field = (label, name, value = '', attributes = '') => `<label>${label}<input name="${name}" value="${html(value)}" ${attributes}></label>`;
+const closeButton = '<button class="close" type="button" aria-label="Close dialog">×</button>';
 function showDialog(title, content) {
   dialog.innerHTML = `${closeButton}<h2 id="dialog-title">${html(title)}</h2>${content}`;
   dialog.querySelector('.close').onclick = () => dialog.close();
