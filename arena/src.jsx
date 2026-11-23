@@ -150,9 +150,9 @@ function ProblemBrowser({ problems, decoding }) {
     <div className="arena-section-head"><h2>{decoding ? 'All Decode challenges' : 'Practice problems'}</h2><span role="status">{shown.length} of {problems.length}</span></div>
     <div className="arena-filters">
       <label>Search<input type="search" placeholder="Problem or topic" value={query} onChange={event => update('q',event.target.value)}/></label>
-      <label>Topic<select value={topic} onChange={event => update('topic',event.target.value)}><option value="">All topics</option>{topics.map(value => <option key={value}>{value}</option>)}</select></label>
-      <label>Difficulty<select value={level} onChange={event => update('level',event.target.value)}><option value="">All levels</option>{['Easy','Medium','Hard'].map(value => <option key={value}>{value}</option>)}</select></label>
-      <label>Status<select value={progress} onChange={event => update('progress',event.target.value)}><option value="">All statuses</option><option value="solved">{decoding ? 'Decoded' : 'Solved'}</option><option value="todo">To do</option></select></label>
+      <label>Topic<select aria-label="Topic" value={topic} onChange={event => update('topic',event.target.value)}><option value="">All topics</option>{topics.map(value => <option key={value}>{value}</option>)}</select></label>
+      <label>Difficulty<select aria-label="Difficulty" value={level} onChange={event => update('level',event.target.value)}><option value="">All levels</option>{['Easy','Medium','Hard'].map(value => <option key={value}>{value}</option>)}</select></label>
+      <label>Status<select aria-label="Status" value={progress} onChange={event => update('progress',event.target.value)}><option value="">All statuses</option><option value="solved">{decoding ? 'Decoded' : 'Solved'}</option><option value="todo">To do</option></select></label>
     </div>
     {shown.length ? <><div className="problem-columns" aria-hidden="true"><span/><span>Problem</span><span>Difficulty</span><span/></div><ProblemList problems={shown} search={search}/></>
       : <div className="arena-empty"><p>No problems match these filters.</p><button className="text-button" onClick={() => update('','')}>Clear filters</button></div>}

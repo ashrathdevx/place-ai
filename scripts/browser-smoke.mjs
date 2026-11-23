@@ -36,7 +36,7 @@ try {
   await page.goForward();
   await loaded();
   await page.getByRole('link',{name:'Challenges',exact:false}).last().click();
-  await page.getByLabel('Search').fill('never-matches-123');
+  await page.getByRole('searchbox',{name:'Search',exact:true}).fill('never-matches-123');
   await page.getByText('No problems match these filters.').waitFor();
   await page.getByRole('button',{name:'Clear filters'}).click();
   assert.equal(await page.locator('.problem-row').count(),30);
