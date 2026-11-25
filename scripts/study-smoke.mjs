@@ -28,7 +28,7 @@ async function submitFix(slug) {
 
 try {
   await go('/');
-  await heading('Learn to debug real code.').waitFor();
+  await heading('Build what’s next in tech.').waitFor();
   await page.emulateMedia({colorScheme:'dark'});
   await page.waitForFunction(() => document.documentElement.dataset.theme === 'dark');
   const appearance = page.getByLabel('Theme',{exact:true});
@@ -41,7 +41,10 @@ try {
   await page.waitForFunction(() => document.documentElement.dataset.theme === 'light');
   assert.match(await appearance.locator('option[value="system"]').textContent(),/System · Light/);
   assert.equal(await link('Start learning').getAttribute('href'),'/learn');
-  assert.equal(await link('Browse challenges').getAttribute('href'),'/arena/decode');
+  assert.equal(await link('Become a debugger').getAttribute('href'),'/arena/decode');
+  assert.equal(await link('Start Code Hunt').getAttribute('href'),'#code-hunt');
+  assert.equal(await page.locator('#code-hunt li a').count(),3);
+  assert.equal(await page.locator('.landing-audiences article').count(),3);
   assert.equal(await link('Try this challenge').getAttribute('href'),'/arena/problems/decode-last-reading?lesson=arrays');
   assert.equal(await link('View sample Passport').getAttribute('href'),'/proof/demo');
   assert.equal(await page.locator('.landing-modules li').count(),5);

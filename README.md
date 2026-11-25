@@ -31,9 +31,12 @@ Stopping with `docker compose down` retains the local database, queue, and fixtu
 | Arena · Solve and Contests | 14 standalone problems, one seeded practice contest, and live verdicts and standings. Run uses sample or custom input. Submit uses the server-side fixture bank. |
 | Skill Passport | Overview, accepted activity, and evidence. One decoded problem per distinct accepted challenge, even when several languages pass. Profile edits and the private preview are browser-local. |
 | Evidence Engine | Judge records, student-added sources, and provider imports where configured. The shareable sample Passport uses fictional data. |
-| Practice, Placements, and Marketplace | Mini challenges, a local application-prep checklist, sample listings, bookmarks, and listing drafts. |
+| Placement | Browse jobs and internships, compare evidence with role benchmarks or a pasted posting, and build a weekly study plan. Targets, saved roles, and task progress are stored in this browser. |
+| Practice and Marketplace | Mini challenges, sample marketplace listings, bookmarks, and listing drafts. |
 
-Placement listings, payments, durable accounts, public personal Passport publishing, and a live Decode contest pilot are pending. The repository and the local Compose stack are development artifacts. See the [launch gates](LAUNCH-AUDIT.md) before hosting a public judge.
+Placement reads the public GitLab and Razorpay Greenhouse boards when reachable. Other companies have clearly labeled example roles and links to their official careers pages. Résumé text is processed in the current tab.
+
+Employer coverage beyond the connected careers boards, payments, durable accounts, public personal Passport publishing, and a live Decode contest pilot are pending. The repository and the local Compose stack are development artifacts. See the [launch gates](LAUNCH-AUDIT.md) before hosting a public judge.
 
 ## Repository map
 

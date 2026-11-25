@@ -1,12 +1,16 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { catalogBySlug, fallbackCatalog } from './judge/public-catalog.mjs';
+import { handlePlacementFeed } from './placement-feed.mjs';
 import { handleEvidence } from './evidence/connectors.mjs';
 
 const pages = new Set(['/', '/learn', '/practice', '/placements', '/marketplace', '/proof', '/proof/demo', '/profile', '/profile/edit']);
 const assets = new Map([
   ['/assets/app.js', 'text/javascript'],
   ['/assets/data.js', 'text/javascript'],
+  ['/assets/placement.js', 'text/javascript'],
+  ['/assets/placement-data.js', 'text/javascript'],
+  ['/assets/placement.css', 'text/css'],
   ['/assets/site.css', 'text/css'],
   ['/assets/tokens.css', 'text/css'],
   ['/assets/theme.js', 'text/javascript'],
@@ -27,6 +31,7 @@ const types = { js:'text/javascript',css:'text/css',woff2:'font/woff2',ttf:'font
 
 createServer(async (req, res) => {
   const path = (req.url ?? '/').split('?')[0].replace(/\/$/, '') || '/';
+  if (path === '/api/placement/roles') return handlePlacementFeed(req,res);
   if (path.startsWith('/api/evidence/') && path !== '/api/evidence/arena') return handleEvidence(req,res,path);
   if (path.startsWith('/api/')) {
     if (api) return api.handle(req,res,path);
