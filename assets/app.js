@@ -1,4 +1,5 @@
-import { setTheme, themePreference } from './theme.js';
+import { renderPlacement } from './placement.js';
+import { setTheme, systemTheme, themePreference } from './theme.js';
 import { cseTrack, challengeUrl, continueStudy, moduleProgress } from './study-plan.js';
 import { practiceState, rememberLesson, reviewReason, studyProgress, updatePractice } from './practice-state.js';
 import { watchArenaProgress } from './live-progress.js';
@@ -42,20 +43,33 @@ const localStatus = (message, stored) => stored ? message : `${message} Browser 
 const main = document.querySelector('main');
 const dialog = document.querySelector('#dialog');
 const route = location.pathname.replace(/\/$/, '') || '/';
-const navigation = [['/learn','Learn'],['/practice','Practice'],['/placements','Placements'],['/arena','Arena'],['/marketplace','Marketplace'],['/proof','Evidence Engine']];
+const navigation = [['/learn','Learn'],['/practice','Practice'],['/placements','Placement'],['/arena','Arena'],['/marketplace','Marketplace'],['/proof','Evidence Engine']];
 const brand = `<a class="brand" href="/" aria-label="Place AI home"><img src="/assets/mark.svg" alt="" width="33" height="33"> Place<span>AI</span></a>`;
 const nav = navigation.map(([link,label]) => `<a href="${link}" ${route === link || (route.startsWith(link + '/') && !navigation.some(([candidate]) => candidate !== link && (route === candidate || route.startsWith(candidate + '/')))) ? 'aria-current="page"' : ''}>${label}</a>`).join('');
-document.querySelector('#header').innerHTML = `<div class="wrap header-inner">${brand}<nav id="nav" aria-label="Main navigation">${nav}</nav><a href="/profile" class="button small header-cta" ${route.startsWith('/profile') ? 'aria-current="page"' : ''}>Skill Passport</a><label class="theme-control"><span class="sr-only">Theme</span><select id="site-theme" aria-label="Theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label><button id="menu" class="button small secondary" type="button" aria-expanded="false" aria-controls="nav">Menu</button></div>`;
-const themeControl = document.querySelector('#site-theme');
+const header = document.querySelector('#header');
+header.innerHTML = `<div class="wrap header-inner">${brand}<nav id="nav" aria-label="Main navigation">${nav}</nav>
+  <div class="header-actions"><a href="/profile" class="button small header-cta" ${route.startsWith('/profile') ? 'aria-current="page"' : ''}>${icon('shield')}<span>Skill Passport</span></a>
+  <button id="menu" class="button small secondary" type="button" aria-expanded="false" aria-controls="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M5 8h14M5 16h14"/></svg><span>Menu</span></button>
+  <label class="theme-control"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18z" fill="currentColor"/><circle cx="12" cy="12" r="9"/></svg><select id="site-theme" aria-label="Theme" title="Appearance"><option value="system">System · ${systemTheme()}</option><option value="light">Light</option><option value="dark">Dark</option></select></label></div></div>`;
+const themeControl = header.querySelector('#site-theme');
 themeControl.value = themePreference();
 themeControl.onchange = () => setTheme(themeControl.value);
-window.addEventListener('place-theme',() => { themeControl.value = themePreference(); });
-document.querySelector('#menu').onclick = event => {
-  const open = event.currentTarget.getAttribute('aria-expanded') === 'true';
-  event.currentTarget.setAttribute('aria-expanded', String(!open));
-  document.querySelector('#nav').classList.toggle('open', !open);
+window.addEventListener('place-theme',() => {
+  themeControl.value = themePreference();
+  themeControl.options[0].textContent = 'System · '+systemTheme();
+});
+const menuButton = header.querySelector('#menu');
+const setMenuOpen = open => {
+  menuButton.setAttribute('aria-expanded',String(open));
+  header.querySelector('#nav').classList.toggle('open',open);
 };
-document.querySelector('#footer').innerHTML = `<div class="wrap footer-inner">${brand}<p>From your first semester to your first role.</p><a href="/proof/demo">Sample Skill Passport</a></div>`;
+menuButton.onclick = () => setMenuOpen(menuButton.getAttribute('aria-expanded') !== 'true');
+header.addEventListener('keydown',event => {
+  if (event.key !== 'Escape' || menuButton.getAttribute('aria-expanded') !== 'true') return;
+  setMenuOpen(false);
+  menuButton.focus();
+});
+document.querySelector('#footer').innerHTML = `<div class="wrap footer-inner">${brand}<p>Learn, practise, and show your work.</p><a href="/proof/demo">Sample Skill Passport</a></div>`;
 
 const action = (link, label, style = '') => `<a class="button ${style}" href="${link}">${label}</a>`;
 const sectionIntro = (label, title, text) => `<div class="page-intro"><p class="eyebrow">${label}</p><h1>${title}</h1><p class="lede">${text}</p></div>`;
@@ -67,44 +81,72 @@ function home() {
   const steps = [
     ['spark','Learn','Follow a study plan','Trace a worked example, then open the two repairs for that module.','/learn','Explore Learn'],
     ['code','Decode','Repair a real program','Run the sample, test an edge case, and submit your fix against hidden tests.','/arena/decode','Browse Decode'],
-    ['shield','Skill Passport','See what you’ve earned','Review the challenge, language, date, and verdict behind each accepted repair.','/profile','Open Skill Passport'],
+    ['shield','Skill Passport','Show your work','Keep a record of the repairs you’ve completed and the projects you can demonstrate.','/profile','Open Skill Passport'],
+    ['bag','Placement','Prepare for a role','Explore jobs and internships, review the evidence you have, and build a study plan around the gaps.','/placements','Explore placement'],
+  ];
+  const audiences = [
+    ['Students','Work through a short lesson, then apply it to a program with a real logic bug.','/learn','Start learning'],
+    ['Internship and job seekers','Compare your skills with a role and get a practice plan that fits your week.','/placements','Find your next role'],
+    ['Working tech professionals','Practise tracing unfamiliar code and use Placement to plan a move into a new specialization.','/arena/decode','Practise debugging'],
+  ];
+  const hunt = [
+    ['Find the missing value','Trace the last array element.',firstModule.id,firstModule.challenge],
+    ['Track the first match','Check how the program reports positions.','search','decode-first-ticket'],
+    ['Catch the false rise','Use two equal values to expose the bug.','debugging','decode-rise-count'],
   ];
   main.innerHTML = `
     <div class="landing">
       <section class="landing-hero" aria-labelledby="landing-title">
         <div class="wrap landing-hero-layout">
           <div class="landing-intro">
-            <p class="eyebrow">CSE Debugging Foundations</p>
-            <h1 id="landing-title">Learn to debug real code.</h1>
-            <p class="lede">Follow a study plan, repair complete programs in C, C++, or Python, and see your accepted fixes in your Skill Passport.</p>
-            <div class="actions">${action('/learn','Start learning')}${action('/arena/decode','Browse challenges','secondary')}</div>
+            <h1 id="landing-title">Write better code. <span>Know why it works.</span></h1>
+            <p class="lede">Fix real programs in C, C++, or Python. Build a record of your work and prepare for tech jobs or internships.</p>
+            <div class="actions">${action('/arena/decode','Become a debugger')}${action('#code-hunt','Start Code Hunt','secondary')}</div>
+            <a class="landing-placement-link" href="/placements">Explore jobs and internships <span aria-hidden="true">→</span></a>
           </div>
-          <article class="panel landing-example" aria-labelledby="example-title">
+          <div class="landing-devices">
+            <div class="landing-laptop">
+              <div class="landing-device-chrome" aria-hidden="true"><span></span><span></span><span></span><strong>Place AI · Decode</strong></div>
+              <article class="panel landing-example" aria-labelledby="example-title">
             <header class="landing-example-header">
-              <div><p>Decode example</p><h2 id="example-title">The Missing Reading</h2></div>
-              <span class="tag">Python 3</span>
+              <div><p>Try Decode</p><h2 id="example-title">The Missing Reading</h2></div>
+              <span class="landing-example-language">Python 3</span>
             </header>
             <div class="landing-example-body">
               <div class="landing-example-controls" role="group" aria-label="Code example">
                 <button type="button" aria-pressed="true" data-example="starter">Buggy starter</button>
                 <button type="button" aria-pressed="false" data-example="fix">Example fix</button>
               </div>
-              <pre class="landing-code" aria-label="Python example"><code><span class="landing-code-comment"># Include every reading</span>
+              <pre class="landing-code" aria-label="Python example"><code><span class="landing-code-comment"># a[0] stores the number of readings</span>
 <span class="landing-code-keyword">return</span> <span class="landing-code-function">sum</span>(a[<span data-example-range>1:-1</span>])</code></pre>
               <dl class="landing-sample">
-                <div><dt>Sample input</dt><dd>4 2 -3 8 1</dd></div>
+                <div><dt>Input</dt><dd>4 2 -3 8 1</dd></div>
                 <div><dt>Output</dt><dd data-example-output>7</dd></div>
                 <div><dt>Expected</dt><dd>8</dd></div>
               </dl>
-              <p class="landing-example-result" data-example-result role="status">The slice skips the final reading.</p>
+              <p class="landing-example-result" data-example-result role="status">The endpoint excludes the last reading.</p>
             </div>
             <a class="landing-example-link" href="${sampleChallenge}">Try this challenge <span aria-hidden="true">↗</span></a>
-          </article>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="wrap landing-audiences" aria-labelledby="landing-audience-title">
+        <h2 id="landing-audience-title">Find your starting point</h2>
+        <div>${audiences.map(([name,copy,href,label]) => `<article><h3>${name}</h3><p>${copy}</p><a href="${href}">${label} <span aria-hidden="true">→</span></a></article>`).join('')}</div>
+      </section>
+
+      <section class="wrap landing-hunt" id="code-hunt" aria-labelledby="landing-hunt-title">
+        <div class="panel landing-hunt-panel">
+          <div><h2 id="landing-hunt-title">Code Hunt</h2><p>Follow three clues through real Decode challenges. Trace the program, expose the bug with a test case, then submit your fix.</p></div>
+          <ol>${hunt.map(([label,clue,module,slug]) => `<li><a href="${challengeUrl(module,slug)}"><strong>${label}</strong><small>${clue}</small><span aria-hidden="true">→</span></a></li>`).join('')}</ol>
         </div>
       </section>
 
       <section class="wrap landing-path" aria-labelledby="landing-path-title">
-        <h2 id="landing-path-title">From your first lesson to your first accepted fix</h2>
+        <h2 id="landing-path-title">How Place AI helps</h2>
         <ol class="landing-path-grid">${steps.map(([symbol,label,title,copy,link,linkLabel]) => `
           <li class="panel landing-step">
             <p class="landing-step-label"><span class="tile-icon">${icon(symbol)}</span>${label}</p>
@@ -141,7 +183,7 @@ function home() {
       for (const button of controls) button.setAttribute('aria-pressed',String(button === control));
       range.textContent = fixed ? '1:' : '1:-1';
       output.textContent = fixed ? '8' : '7';
-      result.textContent = fixed ? 'The output matches this sample.' : 'The slice skips the final reading.';
+      result.textContent = fixed ? 'The output matches this sample.' : 'The endpoint excludes the last reading.';
       result.classList.toggle('landing-result-pass',fixed);
     };
   }
@@ -230,7 +272,7 @@ function learn() {
 
 function practice() {
   main.innerHTML = `<div class="wrap page practice-page">
-    <div class="practice-banner"><div><p class="eyebrow">Practice</p><h1>Find your next problem.</h1><p class="lede">Work through short challenges by branch or open the Arena for judged coding problems.</p></div>${action('/arena','Open Coding Arena')}</div>
+    <div class="practice-banner"><div><p class="eyebrow">Practice</p><h1>Practice challenges</h1><p class="lede">Practice short questions by branch, or open Arena to submit code to the judge.</p></div>${action('/arena','Open Coding Arena')}</div>
     <div class="practice-grid"><section class="panel practice-library" aria-labelledby="challenge-title">
       <div class="practice-controls"><h2 id="challenge-title">Challenge library</h2>
         <div class="practice-filters"><label>Search<input type="search" id="practice-search" placeholder="Search challenges"></label>
@@ -312,22 +354,6 @@ function practice() {
     };
   };
   render();
-}
-
-function placements() {
-  const tasks = ['Complete a technical practice set','Write a walkthrough of your strongest project','Update your résumé with evidence links','Rehearse an introduction and a behavioral answer','Prepare questions for the interviewer'];
-  main.innerHTML = `<div class="wrap page">${sectionIntro('Get placed','Placement preparation','Use this checklist for interviews and application materials. Progress is saved in this browser.')}
-    <div class="workspace"><section class="panel padded"><h2>Placement checklist</h2><p role="status" class="green" id="prep-progress"></p><div class="checkbox-group">${tasks.map((task, index) => `<label><input type="checkbox" data-task="${index}" ${state.placement[index] ? 'checked' : ''}> ${task}</label>`).join('')}</div></section>
-    <section class="panel padded"><p class="eyebrow">Application materials</p><h2>Share your strongest work</h2><p class="muted">Add a project, résumé or internship record to your Skill Passport. Use a project walkthrough to explain what you built and what you learned.</p><div class="actions">${action('/profile','Update my profile')}${action('/practice','Practice questions','secondary')}</div></section></div></div>`;
-  const progress = (stored = true) => {
-    const message = `${tasks.filter((_, index) => state.placement[index]).length} of ${tasks.length} steps complete`;
-    main.querySelector('#prep-progress').textContent = localStatus(message, stored);
-  };
-  main.querySelectorAll('[data-task]').forEach(input => input.onchange = () => {
-    state.placement[input.dataset.task] = input.checked;
-    progress(save());
-  });
-  progress();
 }
 
 function marketplace() {
@@ -517,14 +543,14 @@ function profile() {
 }
 
 const pages = {
-  '/': ['Show what you can do', home],
+  '/': ['Learn, practise, and prepare for tech roles', home],
   '/learn': ['Career coach', learn],
   '/practice': ['Practice', practice],
-  '/placements': ['Placements', placements],
+  '/placements': ['Placement', () => renderPlacement(main,dialog,{html,icon})],
   '/marketplace': ['Student Marketplace', marketplace],
   '/proof': ['Evidence Engine', proof],
   '/proof/demo': ['Synexis · Sample Skill Passport', samplePassport],
-  '/profile': ['My profile', profile],
+  '/profile': ['Engineering Passport', profile],
   '/profile/edit': ['Profile settings', () => openProfileSettings(main,state,profileUI,save)],
 };
 const [title, render] = pages[route] ?? pages['/'];

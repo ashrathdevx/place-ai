@@ -13,7 +13,7 @@
     "test": "node --test",
     "db:seed": "node scripts/seed.mjs",
     "test:smoke": "node scripts/smoke.mjs",
-    "test:browser": "node scripts/browser-smoke.mjs && node scripts/study-smoke.mjs",
+    "test:browser": "node scripts/browser-smoke.mjs && node scripts/study-smoke.mjs && node scripts/placement-smoke.mjs",
     "verify": "npm run check && npm test && npm run build:arena",
     "wait:arena": "node scripts/wait-for-arena.mjs"
   },

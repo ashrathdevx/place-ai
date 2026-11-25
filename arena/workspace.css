@@ -8,7 +8,7 @@ body { background: var(--arena-canvas); }
 code, pre, textarea { font-family: var(--font-code); }
 .arena-header {
   position: sticky; top: 0; z-index: 5;
-  background: var(--surface); backdrop-filter: blur(14px); border-bottom: 1px solid var(--arena-line);
+  background: var(--glass); backdrop-filter: blur(18px) saturate(135%); border-bottom: 1px solid var(--arena-line);
 }
 .arena-nav {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
@@ -286,10 +286,33 @@ body.working { height: 100vh; height: 100dvh; overflow: hidden; }
 }
 
 .arena-modes { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-block: 8px; }
-.arena-modes .solver-tab[aria-pressed="true"], .arena-modes .solver-tab[aria-current="page"] {
-  color: var(--accent); text-decoration: underline; text-underline-offset: 4px;
-}
 .code-comparison { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%, 220px),1fr)); gap: 12px; }
 .code-comparison > div { min-width: 0; }
 .code-comparison pre { max-height: 24rem; overflow: auto; margin: 0; padding: 12px; border: 1px solid var(--border); border-radius: 8px; }
 .draft-status { font-size: 12px; color: var(--muted); margin-inline-start: auto; }
+
+.workspace-bar { background: var(--glass); border-radius: var(--panel-radius); }
+.pane { border-radius: var(--panel-radius); }
+.editor-toolbar { background: color-mix(in srgb,var(--surface) 55%,var(--subtle)); }
+.arena-modes { gap: 4px 6px; }
+.arena-modes .solver-tab {
+  min-height: 40px;
+  padding-inline: 10px;
+  border-radius: var(--control-radius);
+}
+.arena-modes .solver-tab:hover { background: var(--subtle); }
+.arena-modes .solver-tab[aria-pressed=true], .arena-modes .solver-tab[aria-current=page] {
+  color: var(--blue);
+  background: var(--subtle);
+  text-decoration: none;
+  box-shadow: none;
+}
+.problem-row:focus-visible { outline-offset: -2px; }
+.difficulty {
+  padding: 2px 8px;
+  background: color-mix(in srgb,var(--surface) 44%,var(--subtle));
+}
+@media (max-width: 560px) {
+  .arena-modes .solver-tab { min-height: 44px; }
+  .statement .editor-toolbar { gap: 12px; overflow-x: auto; }
+}

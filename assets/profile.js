@@ -19,11 +19,36 @@ const sampleDays = Array.from({length:84},(_,index) => ({
 const format = value => Number.isSafeInteger(value) ? value.toLocaleString('en-IN') : '—';
 const dateLabel = date => date ? new Date(date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}) : '';
 const acceptedRate = ({accepted,graded}={}) => graded ? Math.round(accepted*100/graded)+'%' : '—';
+const dayLength = 86400000;
+const sampleEnd = Date.UTC(2026,10,23);
+
+export function passportActivity(days, now = Date.now()) {
+  const today = Date.parse(new Date(now).toISOString().slice(0,10));
+  const byDay = new Map(days.map(({date,count}) => [date,count]));
+  const at = offset => new Date(today-offset*dayLength).toISOString().slice(0,10);
+  const hit = offset => (byDay.get(at(offset)) ?? 0) > 0;
+  let offset = hit(0) ? 0 : 1;
+  const start = offset;
+  while (hit(offset)) offset++;
+  const weeks = Array.from({length:8},(_,index) => {
+    const first = (7-index)*7;
+    let count = 0;
+    for (let day = first; day < first+7; day++) count += byDay.get(at(day)) ?? 0;
+    return {start:at(first+6),end:at(first),count};
+  });
+  return {streak:offset-start,weeks};
+}
+
+function progressChart(weeks) {
+  const max = Math.max(1,...weeks.map(week => week.count));
+  return `<ol class="passport-chart" aria-label="Accepted submissions in eight seven-day periods">${weeks.map(week =>
+    `<li><span class="passport-chart-count">${week.count}</span><span class="passport-chart-track"><span style="--bar-size:${week.count/max*100}%"></span></span><time datetime="${week.start}">${new Date(week.start).toLocaleDateString('en-IN',{month:'short',day:'numeric',timeZone:'UTC'})}</time></li>`).join('')}</ol>`;
+}
 
 export function activityGrid(days=[], demo=false, accepted=false) {
   const eventLabel = accepted ? 'accepted submissions' : 'submissions';
   const counts = new Map(days.map(item => [item.date,item.count]));
-  const today = demo ? Date.parse('2026-11-23') : Date.now();
+  const today = demo ? sampleEnd : Date.now();
   const cells = Array.from({length:84},(_,index) => {
     const date = new Date(today-(83-index)*86400000).toISOString().slice(0,10);
     const count = counts.get(date) ?? 0;
@@ -83,22 +108,36 @@ function shell(user,ui,demo,preview) {
   const title = user.name || 'My profile';
   const portrait = profilePortrait({...user,photo:user.showPhoto === false ? '' : user.photo},ui);
   return `<div class="wrap page profile-page">
+    <div class="passport-title"><div><h1>Engineering Passport</h1><p>${demo ? 'Example engineering profile with sample evidence.' : 'Your coding progress, skills, and supporting evidence on Place AI.'}</p></div>
+      <div class="profile-header-actions">${demo ? '<button class="button secondary small" id="share">Share sample</button>' : preview ? '' : ui.action('/profile?preview=1','Preview Passport','secondary small')+ui.action('/profile/edit','Edit profile','small')}</div>
+    </div>
     <header class="profile-header">
       <div class="profile-photo">${portrait}</div>
-      <div class="profile-identity"><h1 id="profile-title">${ui.html(title)}</h1>
+      <div class="profile-identity"><h2 id="profile-title">${ui.html(title)}</h2>
         ${user.username ? `<p class="profile-username">@${ui.html(user.username)}</p>` : ''}
         ${user.bio ? `<p class="profile-bio">${ui.html(user.bio)}</p>` : ''}
         ${profileMetadata(user,ui)}</div>
-      <div class="profile-header-actions">${demo ? '<button class="button secondary small" id="share">Share sample</button>' : preview ? '' : ui.action('/profile/edit','Edit profile','secondary small')+ui.action('/profile?preview=1','Preview Passport','secondary small')}</div>
     </header>
     ${preview ? '<p class="settings-note">Private preview. Only you can see this view in this browser. <a href="/profile">Back to profile</a></p>' : ''}
-    <nav class="profile-nav" aria-label="Profile sections"><a href="#overview">Overview</a><a href="#activity">Activity</a><a href="#skills">Evidence</a>${preview ? '' : '<a href="#connections">Platforms</a>'}</nav>
+    <div class="passport-layout">
+    <nav class="profile-nav panel" aria-label="Profile sections"><a href="#overview">Overview</a><a href="#activity">Activity</a><a href="#skills">Evidence</a>${preview ? '' : '<a href="#connections">Platforms</a>'}</nav>
     <div class="profile-content">
-      <section class="panel profile-overview" id="overview" aria-label="Coding overview">
+      <section class="passport-dashboard" id="overview" aria-label="Coding overview">
         ${demo ? '<p class="sample-label">Sample data</p>' : ''}
-        <div class="stats" id="passport-stats">${ui.stat(demo ? '300' : '—',demo ? 'Practice problems' : 'Arena solved')}${ui.stat(demo ? '91%' : '—',demo ? 'Python score' : 'Problems decoded')}${ui.stat(demo ? '18' : '0','Projects')}</div>
-        ${demo ? '' : '<section class="passport-decode" id="passport-decode" aria-label="Decode progress"><h2>Decode progress</h2><p>Loading judge statistics…</p></section>'}
-        ${demo || preview ? '' : '<p id="passport-track">CSE Debugging Foundations</p><a class="button small" id="passport-continue" href="/learn">Continue practice</a>'}
+        <div class="panel passport-summary"><div class="stats" id="passport-stats">${ui.stat(demo ? '300' : '—','Arena solved')}${ui.stat(demo ? '24' : '—','Problems decoded')}${ui.stat(demo ? passportActivity(sampleDays,sampleEnd).streak+' days' : '—','Current streak')}${ui.stat(demo ? '18' : '0','Projects')}</div></div>
+        ${demo ? `<div class="passport-dashboard-grid">
+          <section class="panel padded"><h2>Decode progress</h2><p>24 of 30 challenges decoded</p><progress value="24" max="30" aria-label="Sample Decode challenges completed"></progress>${metricList([['Easy',10],['Medium',9],['Hard',5]],ui.stat)}</section>
+          <section class="panel padded"><h2>Sample verified languages</h2><ul class="passport-language-list"><li><strong>Python 3</strong><span>180 accepted problems</span></li><li><strong>C++20</strong><span>23 accepted problems</span></li></ul></section>
+          <section class="panel padded"><h2>Sample achievements</h2><ul class="passport-achievement-list"><li><strong>First Fix</strong><span>Earned</span></li><li><strong>Debugging Foundations</strong><span>Earned</span></li><li><strong>Decode Complete</strong><span>24 / 30 repairs</span></li></ul></section>
+          <section class="panel padded"><h2>Sample submission trend</h2><p class="pass-chart-caption">Accepted submissions over eight weeks.</p>${progressChart(passportActivity(sampleDays,sampleEnd).weeks)}</section>
+        </div>` : `<div class="passport-dashboard-grid">
+          <section class="panel padded" id="passport-decode" aria-label="Decode progress"><h2>Decode progress</h2><p>Waiting for judge records…</p></section>
+          <section class="panel padded"><div class="passport-decode-head"><h2>Verified languages</h2><a href="#skills">View evidence</a></div><div id="passport-languages"></div></section>
+          <section class="panel padded"><h2>Achievements</h2><div id="passport-achievements"></div></section>
+          <section class="panel padded"><h2>Accepted submission trend</h2><p class="pass-chart-caption">Accepted submissions over the last eight weeks.</p><div id="passport-trend"></div></section>
+          <section class="panel padded passport-recent"><div class="passport-decode-head"><h2>Recent activity</h2><a href="#activity">View activity</a></div><div id="passport-recent"></div></section>
+        </div>`}
+        ${demo || preview ? '' : '<section class="panel padded passport-next"><div><h2>Continue your study plan</h2><p id="passport-track">CSE Debugging Foundations</p></div><a class="button small" id="passport-continue" href="/learn">Continue practice</a></section>'}
       </section>
       <section class="panel padded" id="activity" aria-label="Coding activity">
         ${demo ? '' : '<p>An active day has at least one accepted submission (UTC).</p>'}
@@ -108,12 +147,12 @@ function shell(user,ui,demo,preview) {
       <section id="skills"><div class="profile-section-heading"><h2>Skills and evidence</h2>${demo || preview ? '' : '<button class="button secondary small" id="add-evidence">Add evidence</button>'}</div>
         <div class="panel subject-grid" id="passport-skills">${demo
           ? subject('Python',metrics.python,'91%',ui)+subject('SQL',metrics.sql,'88%',ui)
-          : subject('Python',[['Arena problems solved',null]],null,ui)+subject('SQL',[['Mini challenges',0]],null,ui)}</div>
+          : ''}</div>
         ${demo ? '' : '<div class="panel padded"><h3>Judge-verified results</h3><div id="verified-evidence"></div></div><div class="panel padded" id="profile-evidence"></div>'}
       </section>
       <section id="connections" ${preview ? 'hidden' : ''}><div class="profile-section-heading"><h2>Connected platforms</h2></div>
         ${demo ? sampleConnections(ui) : '<p id="connection-status" role="status"></p><div class="panel connection-list" id="connections-grid"></div>'}
-      </section></div></div>`;
+      </section></div></div></div>`;
 }
 export function renderPassport(main,user,ui,demo=false,preview=false) {
   main.innerHTML = shell(user,ui,demo,preview);
@@ -152,10 +191,12 @@ export async function attachLiveEvidence(main,state,ui,{preview=false}={}) {
     const url = new URL(location.href);
     url.searchParams.delete('connection');
     history.replaceState({},'',url.pathname+url.search+url.hash);
+    if (!preview && !url.hash) location.hash = 'connections';
   }
   const grid = main.querySelector('#connections-grid');
   let settings = {configured:{},snapshots:{}};
   let arena = null;
+  let judgeUnavailable = false;
   const languages = {python:'Python 3',cpp:'C++20',c:'C17'};
   function acceptedRows(items) {
     return items.length ? '<ul class="passport-decode-list">'+items.map(item => `<li>
@@ -170,19 +211,32 @@ export async function attachLiveEvidence(main,state,ui,{preview=false}={}) {
 
   const liveStats = () => {
     const projects = state.evidence.filter(item => ['Major project','Minor project'].includes(item.type)).length;
+    const activity = arena ? passportActivity(arena.accepted_days ?? []) : null;
     main.querySelector('#passport-stats').innerHTML = ui.stat(format(arena?.solved),'Arena solved')+
-      ui.stat(format(arena?.decoded),'Problems decoded')+ui.stat(format(projects),'Projects');
+      ui.stat(format(arena?.decoded),'Problems decoded')+ui.stat(activity ? activity.streak+(activity.streak === 1 ? ' day' : ' days') : '—','Current streak')+
+      ui.stat(format(projects),'Projects');
     const decode = main.querySelector('#passport-decode');
     decode.innerHTML = arena ? `<div class="passport-decode-head"><h2>Decode progress</h2><a href="/arena/decode">Open Decode →</a></div>
-      <p>${format(arena.decoded)} of ${format(arena.decode_total)} challenges decoded · ${acceptedRate(arena)} acceptance across judged submissions</p>
+      <p>${format(arena.decoded)} of ${format(arena.decode_total)} challenges decoded</p>
+      <progress value="${arena.decoded}" max="${Math.max(1,arena.decode_total)}" aria-label="Decode challenges completed"></progress>
       ${metricList([['Easy',arena.decoded_easy],['Medium',arena.decoded_medium],['Hard',arena.decoded_hard]],ui.stat)}
-      ${arena.recent_decoded?.length ? `<ul class="passport-decode-list">${arena.recent_decoded.slice(0,3).map(item =>
-        `<li><a href="/arena/problems/${encodeURIComponent(item.slug)}">${ui.html(item.title)}</a><span>${ui.html(item.difficulty)}</span></li>`).join('')}</ul>` : ''}`
-      : '<div class="passport-decode-head"><h2>Decode progress</h2><a href="/arena/decode">Open Decode →</a></div><p>Live judge statistics are unavailable.</p>';
+      <p class="pass-chart-caption">${arena.graded ? acceptedRate(arena)+' acceptance across graded submissions.' : 'Submit a fix to start tracking acceptance.'}</p>`
+      : `<div class="passport-decode-head"><h2>Decode progress</h2><a href="/arena/decode">Open Decode →</a></div><p>${judgeUnavailable ? 'Judge records are currently unavailable.' : 'Loading judge records…'}</p>`;
+    const verified = Object.entries(languages).filter(([language]) => arena?.[language] > 0);
+    main.querySelector('#passport-languages').innerHTML = verified.length ? '<ul class="passport-language-list">'+verified.map(([language,label]) =>
+      `<li><strong>${label}</strong><span>${format(arena[language])} accepted ${arena[language] === 1 ? 'problem' : 'problems'}</span></li>`).join('')+'</ul>'
+      : '<p>Languages appear here after a judged submission is accepted.</p>';
+    const milestones = [['First Fix',1],['Debugging Foundations',10],['Decode Complete',30]];
+    main.querySelector('#passport-achievements').innerHTML = arena ? '<ul class="passport-achievement-list">'+milestones.map(([title,count]) =>
+      `<li><strong>${title}</strong><span>${arena.decoded >= count ? 'Earned' : format(arena.decoded)+' / '+count+' repairs'}</span></li>`).join('')+'</ul>'
+      : '<p>Achievements appear when judge records are available.</p>';
+    main.querySelector('#passport-trend').innerHTML = activity?.weeks.some(week => week.count)
+      ? progressChart(activity.weeks) : arena ? '<p>Your weekly trend starts with your first accepted submission.</p>' : '<p>Weekly totals require judge records.</p>';
+    main.querySelector('#passport-recent').innerHTML = arena ? acceptedRows((arena.accepted_activity ?? []).slice(0,4)) : '<p>Recent submissions require judge records.</p>';
     const records = (skill,type) => state.evidence.filter(item => item.skill === skill && item.type === type).length;
     main.querySelector('#passport-skills').innerHTML =
       subject('Python',[
-        ['Arena problems solved',arena?.python],['Recorded mini projects',records('Python','Minor project')],
+        ['Accepted problems in Python',arena?.python],['Recorded mini projects',records('Python','Minor project')],
         ['Recorded major projects',records('Python','Major project')],['Recorded assessments',records('Python','Assessment')],
       ],null,ui)+subject('SQL',[
         ['Mini challenges',Number(Boolean(state.completed.sql))],
@@ -270,6 +324,7 @@ export async function attachLiveEvidence(main,state,ui,{preview=false}={}) {
     }
   },() => {
     if (arena) return;
+    judgeUnavailable = true;
     liveStats();
     main.querySelector('#passport-activity').textContent = 'Accepted activity is unavailable while the judge is offline.';
   });

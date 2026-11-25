@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { renderPassport } from './profile.js';
+import { passportActivity, renderPassport } from './profile.js';
 import { profilePortrait } from './profile-settings.js';
 
 const ui = {
@@ -42,7 +42,7 @@ test('avatar rendering only accepts bounded JPEG data', () => {
 test('empty profiles omit the About panel and extra details disclosure', () => {
   const main = {};
   renderPassport(main,{},ui);
-  assert.match(main.innerHTML, /<h1 id="profile-title">My profile<\/h1>/);
+  assert.match(main.innerHTML, /<h2 id="profile-title">My profile<\/h2>/);
   assert.doesNotMatch(main.innerHTML, /<h2>About<\/h2>|<summary>Profile details<\/summary>|Open to internships/);
 });
 
@@ -52,4 +52,17 @@ test('common details appear once with less common information in a disclosure', 
   assert.equal(main.innerHTML.match(/Example Institution/g)?.length,1);
   assert.match(main.innerHTML, /class="profile-meta"[^>]*>.*Open to internships/);
   assert.match(main.innerHTML, /<details class="profile-details"><summary>Profile details<\/summary>.*Example Diploma/s);
+});
+
+
+test('passport activity counts consecutive active UTC days and rolls up eight weeks', () => {
+  const now = Date.parse('2026-11-25T23:00:00Z');
+  const days = [{date:'2026-11-24',count:2},{date:'2026-11-23',count:1},{date:'2026-11-21',count:3},{date:'2026-11-18',count:4}];
+  const progress = passportActivity(days,now);
+  assert.equal(progress.streak,2);
+  assert.equal(progress.weeks.length,8);
+  assert.deepEqual(progress.weeks.at(-1),{start:'2026-11-19',end:'2026-11-25',count:6});
+  assert.equal(progress.weeks.at(-2).count,4);
+  assert.equal(passportActivity([],now).streak,0);
+  assert.equal(passportActivity([...days,{date:'2026-11-25',count:5}],now).streak,3);
 });

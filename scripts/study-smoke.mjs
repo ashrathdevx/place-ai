@@ -28,9 +28,23 @@ async function submitFix(slug) {
 
 try {
   await go('/');
-  await heading('Learn to debug real code.').waitFor();
+  await heading('Write better code. Know why it works.').waitFor();
+  await page.emulateMedia({colorScheme:'dark'});
+  await page.waitForFunction(() => document.documentElement.dataset.theme === 'dark');
+  const appearance = page.getByLabel('Theme',{exact:true});
+  assert.match(await appearance.locator('option[value="system"]').textContent(),/System · Dark/);
+  await appearance.selectOption('light');
+  assert.equal(await page.locator('html').getAttribute('data-theme'),'light');
+  await appearance.selectOption('system');
+  assert.equal(await page.locator('html').getAttribute('data-theme'),'dark');
+  await page.emulateMedia({colorScheme:'light'});
+  await page.waitForFunction(() => document.documentElement.dataset.theme === 'light');
+  assert.match(await appearance.locator('option[value="system"]').textContent(),/System · Light/);
   assert.equal(await link('Start learning').getAttribute('href'),'/learn');
-  assert.equal(await link('Browse challenges').getAttribute('href'),'/arena/decode');
+  assert.equal(await link('Become a debugger').getAttribute('href'),'/arena/decode');
+  assert.equal(await link('Start Code Hunt').getAttribute('href'),'#code-hunt');
+  assert.equal(await page.locator('#code-hunt li a').count(),3);
+  assert.equal(await page.locator('.landing-audiences article').count(),3);
   assert.equal(await link('Try this challenge').getAttribute('href'),'/arena/problems/decode-last-reading?lesson=arrays');
   assert.equal(await link('View sample Passport').getAttribute('href'),'/proof/demo');
   assert.equal(await page.locator('.landing-modules li').count(),5);
@@ -44,11 +58,26 @@ try {
   for (const theme of ['light','dark']) {
     await page.getByLabel('Theme',{exact:true}).selectOption(theme);
     assert.equal(await page.locator('html').getAttribute('data-theme'),theme);
-    for (const width of [360,768,1024,1440]) {
+    for (const width of [320,360,768,851,1024,1440]) {
       await page.setViewportSize({width,height:900});
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),`Landing overflow at ${width}px in ${theme}`);
     }
   }
+  await page.setViewportSize({width:320,height:900});
+  await button('Menu').press('Enter');
+  assert.equal(await button('Menu').getAttribute('aria-expanded'),'true');
+  await button('Menu').press('Escape');
+  assert.equal(await button('Menu').getAttribute('aria-expanded'),'false');
+  const [systemOption,...manualOptions] = await page.getByLabel('Theme',{exact:true}).locator('option').allTextContents();
+  assert.match(systemOption,/^System · (Dark|Light)$/);
+  assert.deepEqual(manualOptions,['Light','Dark']);
+  await go('/practice');
+  await heading('Practice challenges').waitFor();
+  assert.equal(await page.locator('html').getAttribute('data-theme'),'dark');
+  await page.setViewportSize({width:851,height:900});
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  await go('/');
+  await page.setViewportSize({width:1440,height:900});
   await page.getByLabel('Theme',{exact:true}).selectOption('system');
   await link('Start learning').click();
   await module.waitFor();
@@ -109,6 +138,10 @@ try {
     await go('/learn');
     await module.getByText('Complete',{exact:true}).waitFor();
     await go('/profile');
+    await heading('Engineering Passport').waitFor();
+    await page.locator('#passport-languages').getByText('Python 3',{exact:true}).waitFor();
+    await page.locator('#passport-achievements').getByText('Earned',{exact:true}).waitFor();
+    await page.locator('#passport-trend .passport-chart').waitFor();
     await link('Activity').click();
     await page.locator('#accepted-timeline').getByText('The Missing Reading',{exact:true}).waitFor();
     await link('Evidence').click();

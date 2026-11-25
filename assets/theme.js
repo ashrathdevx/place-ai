@@ -7,7 +7,8 @@ try {
 } catch {}
 
 export const themePreference = () => preference;
-export const activeTheme = () => preference === 'system' ? (system.matches ? 'dark' : 'light') : preference;
+export const systemTheme = () => system.matches ? 'Dark' : 'Light';
+export const activeTheme = () => preference === 'system' ? systemTheme().toLowerCase() : preference;
 
 function applyTheme() {
   document.documentElement.dataset.theme = activeTheme();
