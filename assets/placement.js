@@ -67,13 +67,14 @@ export function renderPlacement(main,dialog,{html,icon}) {
         <div class="placement-section-head"><h2>Explore roles</h2><button class="placement-text" id="placement-import">Add a job posting</button></div>
         <label class="placement-search"><span class="placement-sr">Search companies or roles</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.3"/><path d="m16 16 5 5"/></svg><input type="search" id="placement-query" placeholder="Search companies or roles"></label>
         <div class="placement-segments" role="group" aria-label="Role type">${Object.entries(typeLabels).map(([id,label]) => `<button type="button" data-role-type="${id}" aria-pressed="${id === type}">${label}</button>`).join('')}</div>
-        <div class="placement-filters">
-          <label><span class="placement-sr">Company type</span><select id="placement-category">${selectOptions(categoryLabels.map(label => [label,label]),category)}</select></label>
-          <label><span class="placement-sr">Discipline</span><select id="placement-discipline"><option value="">All disciplines</option>${selectOptions(options,'')}</select></label>
+        <div class="placement-selects">
+          <label><span>Company type</span><select id="placement-category">${selectOptions(categoryLabels.map(label => [label,label]),category)}</select></label>
+          <label><span>Discipline</span><select id="placement-discipline"><option value="">All disciplines</option>${selectOptions(options,'')}</select></label>
+        </div>
+        <div class="placement-filters" role="group" aria-label="Result options">
           <button class="placement-text" id="placement-saved" aria-pressed="false">Saved only</button><button class="placement-text" id="placement-posted" aria-pressed="false">Postings only</button><button class="placement-text" id="placement-fit-sort" aria-pressed="false">Best fit</button>
         </div>
-        <p class="placement-meta" id="placement-feed" role="status">Checking connected careers boards…</p>
-        <p class="placement-meta" id="placement-count" role="status"></p>
+        <div class="placement-results-meta"><p class="placement-meta" id="placement-count" role="status"></p><p class="placement-meta" id="placement-feed" role="status">Checking careers boards…</p></div>
         <div id="placement-results" class="placement-results"></div>
       </div>
       <div class="placement-detail" id="placement-detail"></div>
@@ -117,7 +118,7 @@ export function renderPlacement(main,dialog,{html,icon}) {
       const name = company?.name ?? role.companyName;
       const mark = company ? logo(company,html) : `<span class="placement-brand placement-wordmark" aria-hidden="true">${html(name.slice(0,2).toUpperCase())}</span>`;
       return `<button class="placement-role" data-role="${html(role.id)}" ${selected === role.id ? 'aria-current="true"' : ''}>
-        ${mark}<span><strong>${html(name)}</strong><span>${html(role.title)}</span></span><small>${employment(role)}<span>${role.source === 'live' ? 'Careers board' : role.source === 'imported' ? 'My posting' : 'Example'}</span></small><span aria-hidden="true" class="placement-chevron">›</span></button>`;
+        ${mark}<span><strong>${html(name)}</strong><span>${html(role.title)}</span></span><span class="placement-role-source"><strong>${employment(role)}</strong><small>${role.source === 'live' ? 'Careers board' : role.source === 'imported' ? 'My posting' : 'Example'}</small></span><span aria-hidden="true" class="placement-chevron">›</span></button>`;
     }).join('') : '<p class="placement-empty">No matching roles.</p><button class="button secondary" id="placement-clear">Clear filters</button>';
     main.querySelector('#placement-count').textContent = `${visible.length} ${visible.length === 1 ? 'role' : 'roles'}${bestFit ? ' · Sorted by self-reported evidence' : ''}`;
   }
@@ -146,8 +147,8 @@ export function renderPlacement(main,dialog,{html,icon}) {
       </div>
       <h2 tabindex="-1" id="placement-role-title">${html(role.title)}</h2>
       <p class="placement-meta">${employment(role)}${role.location ? ' · '+html(role.location) : ''} · ${role.source === 'live' ? 'Employer listing' : role.source === 'imported' ? 'Your saved posting' : 'Example role'}</p>
-      <div class="placement-fit-head"><h3>${matchesPosting ? 'Skills recognized in your posting' : 'Role preparation benchmark'}</h3><button class="placement-text" id="placement-assess">Review my evidence</button></div>
-      <p class="placement-meta">${assessed ? `${fit.score}% of listed skills have self-reported evidence. ` : ''}${matchesPosting ? 'Compare these skill mentions with the full posting.' : 'Check the employer’s posting for eligibility and requirements.'}</p>
+      <div class="placement-fit-head"><h3>${matchesPosting ? 'Skills recognized in your posting' : 'Skills to prepare'}</h3><button class="placement-text" id="placement-assess">Review my evidence</button></div>
+      <p class="placement-meta">${assessed ? `${fit.score}% of listed skills have self-reported evidence. ` : ''}${matchesPosting ? 'Compare these skill mentions with the full posting.' : 'Use these skills to plan your practice. Confirm requirements on the employer’s site.'}</p>
       <ul class="placement-fit">${fit.rows.map(row => `<li><div>${row.label}${row.mention ? `<small>${html(row.mention)}</small>` : ''}</div><span class="placement-status ${row.status === 'Evidence added' ? 'positive' : row.status === 'Needs practice' ? 'practice' : ''}">${row.status}</span></li>`).join('')}</ul>
       <div class="placement-actions"><button class="button" id="placement-build">Build my study plan</button>${role.url || company?.careers ? external(role.url ?? company.careers,role.url ? 'Open posting' : 'Careers page') : ''}</div>`;
   }

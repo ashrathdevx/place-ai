@@ -28,7 +28,7 @@ async function submitFix(slug) {
 
 try {
   await go('/');
-  await heading('Build what’s next in tech.').waitFor();
+  await heading('Write better code. Know why it works.').waitFor();
   await page.emulateMedia({colorScheme:'dark'});
   await page.waitForFunction(() => document.documentElement.dataset.theme === 'dark');
   const appearance = page.getByLabel('Theme',{exact:true});

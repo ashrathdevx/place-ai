@@ -85,9 +85,9 @@ function home() {
     ['bag','Placement','Prepare for a role','Explore jobs and internships, review the evidence you have, and build a study plan around the gaps.','/placements','Explore placement'],
   ];
   const audiences = [
-    ['Students','Build confidence from your first program. Start with a worked example and repair a small logic bug.','/learn','Start learning'],
-    ['Internship and job seekers','Pick a role, identify your gaps, and turn them into a weekly preparation plan.','/placements','Find your next role'],
-    ['Working tech professionals','Sharpen debugging skills or prepare for a new specialization with focused practice.','/arena/decode','Practise debugging'],
+    ['Students','Work through a short lesson, then apply it to a program with a real logic bug.','/learn','Start learning'],
+    ['Internship and job seekers','Compare your skills with a role and get a practice plan that fits your week.','/placements','Find your next role'],
+    ['Working tech professionals','Practise tracing unfamiliar code and use Placement to plan a move into a new specialization.','/arena/decode','Practise debugging'],
   ];
   const hunt = [
     ['Find the missing value','Trace the last array element.',firstModule.id,firstModule.challenge],
@@ -99,8 +99,8 @@ function home() {
       <section class="landing-hero" aria-labelledby="landing-title">
         <div class="wrap landing-hero-layout">
           <div class="landing-intro">
-            <h1 id="landing-title">Build what’s next in tech.</h1>
-            <p class="lede">Learn by fixing real programs, turn your work into evidence, and prepare for your next tech role.</p>
+            <h1 id="landing-title">Write better code. <span>Know why it works.</span></h1>
+            <p class="lede">Fix real programs in C, C++, or Python. Build a record of your work and prepare for tech jobs or internships.</p>
             <div class="actions">${action('/arena/decode','Become a debugger')}${action('#code-hunt','Start Code Hunt','secondary')}</div>
             <a class="landing-placement-link" href="/placements">Explore jobs and internships <span aria-hidden="true">→</span></a>
           </div>
@@ -109,33 +109,26 @@ function home() {
               <div class="landing-device-chrome" aria-hidden="true"><span></span><span></span><span></span><strong>Place AI · Decode</strong></div>
               <article class="panel landing-example" aria-labelledby="example-title">
             <header class="landing-example-header">
-              <div><p>Decode example</p><h2 id="example-title">The Missing Reading</h2></div>
-              <span class="tag">Python 3</span>
+              <div><p>Try Decode</p><h2 id="example-title">The Missing Reading</h2></div>
+              <span class="landing-example-language">Python 3</span>
             </header>
             <div class="landing-example-body">
               <div class="landing-example-controls" role="group" aria-label="Code example">
                 <button type="button" aria-pressed="true" data-example="starter">Buggy starter</button>
                 <button type="button" aria-pressed="false" data-example="fix">Example fix</button>
               </div>
-              <pre class="landing-code" aria-label="Python example"><code><span class="landing-code-comment"># Include every reading</span>
+              <pre class="landing-code" aria-label="Python example"><code><span class="landing-code-comment"># a[0] stores the number of readings</span>
 <span class="landing-code-keyword">return</span> <span class="landing-code-function">sum</span>(a[<span data-example-range>1:-1</span>])</code></pre>
               <dl class="landing-sample">
-                <div><dt>Sample input</dt><dd>4 2 -3 8 1</dd></div>
+                <div><dt>Input</dt><dd>4 2 -3 8 1</dd></div>
                 <div><dt>Output</dt><dd data-example-output>7</dd></div>
                 <div><dt>Expected</dt><dd>8</dd></div>
               </dl>
-              <p class="landing-example-result" data-example-result role="status">The slice skips the final reading.</p>
+              <p class="landing-example-result" data-example-result role="status">The endpoint excludes the last reading.</p>
             </div>
             <a class="landing-example-link" href="${sampleChallenge}">Try this challenge <span aria-hidden="true">↗</span></a>
               </article>
             </div>
-            <aside class="landing-phone" aria-label="Placement guide preview">
-              <div class="landing-phone-top"><img src="/assets/mark.svg" width="22" height="22" alt=""> Placement</div>
-              <p>Today’s plan</p>
-              <strong>Prepare for your next role.</strong>
-              <ul><li>${icon('code')} Practise DSA</li><li>${icon('layers')} Improve a project</li></ul>
-              <a href="/placements">Open Placement ${icon('up')}</a>
-            </aside>
           </div>
         </div>
       </section>
@@ -190,7 +183,7 @@ function home() {
       for (const button of controls) button.setAttribute('aria-pressed',String(button === control));
       range.textContent = fixed ? '1:' : '1:-1';
       output.textContent = fixed ? '8' : '7';
-      result.textContent = fixed ? 'The output matches this sample.' : 'The slice skips the final reading.';
+      result.textContent = fixed ? 'The output matches this sample.' : 'The endpoint excludes the last reading.';
       result.classList.toggle('landing-result-pass',fixed);
     };
   }
@@ -550,7 +543,7 @@ function profile() {
 }
 
 const pages = {
-  '/': ['Show what you can do', home],
+  '/': ['Learn, practise, and prepare for tech roles', home],
   '/learn': ['Career coach', learn],
   '/practice': ['Practice', practice],
   '/placements': ['Placement', () => renderPlacement(main,dialog,{html,icon})],

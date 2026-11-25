@@ -39,7 +39,7 @@ try {
   await page.getByLabel('Résumé text (optional)').fill('Built an HTTP demo project');
   await page.getByLabel('Arrays & hash maps').selectOption('practice');
   await button('Update role fit').click();
-  await page.getByText('Needs practice',{exact:true}).waitFor();
+  await page.locator('.placement-fit').getByText('Needs practice',{exact:true}).waitFor();
   await page.getByText('Built an HTTP demo project',{exact:true}).first().waitFor();
   await button('Build my study plan').click();
   await page.locator('.placement-task-list summary').first().click();
