@@ -56,10 +56,10 @@ function Header({ compact = false }) {
 
     </nav>
     <div className="arena-header-actions">
-      <label className="theme-control"><span className="sr-only">Theme</span><select aria-label="Theme" value={theme} onChange={event => setTheme(event.target.value)}>
+      <button type="button" className="button secondary small arena-menu-button" aria-controls="arena-navigation" aria-expanded={menu} onClick={() => setMenu(!menu)}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true"><path d="M5 8h14M5 16h14"/></svg><span>Menu</span></button>
+      <label className="theme-control"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18z" fill="currentColor"/><circle cx="12" cy="12" r="9"/></svg><select aria-label="Theme" title="Appearance" value={theme} onChange={event => setTheme(event.target.value)}>
         <option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option>
       </select></label>
-      <button type="button" className="button secondary small arena-menu-button" aria-controls="arena-navigation" aria-expanded={menu} onClick={() => setMenu(!menu)}>Menu</button>
     </div>
   </div></header>;
 }

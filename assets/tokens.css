@@ -10,6 +10,10 @@
   --space-6:24px; --space-8:32px; --space-12:48px; --space-16:64px;
   --control-radius:8px; --panel-radius:12px; --pill-radius:999px;
   --elevation:0 6px 24px #151d2c24; --feedback-time:150ms;
+  --glass:rgba(255,255,255,.78); --glass-edge:rgba(255,255,255,.82);
+  --glow:#dfeafd; --glow-secondary:#e8f2f0;
+  --shadow-panel:0 1px 2px #1822300b,0 10px 32px #233e6b0b;
+  --shadow-button:0 1px 2px #18223019;
   --type-label:.8125rem; --type-compact:.875rem; --type-control:.875rem;
   --type-body:1rem; --type-subhead:1.25rem; --type-panel-title:1.25rem;
   --type-title:2rem; --type-display:3.5rem;
@@ -27,6 +31,10 @@
   --code-keyword:#D2A8FF; --code-type:#79C0FF; --code-string:#7EE2A8;
   --code-number:#FFA657; --code-function:#A8C7FA; --code-comment:#A4AFBF;
   --elevation:0 6px 24px #0006;
+  --glass:rgba(22,27,34,.82); --glass-edge:rgba(234,240,247,.07);
+  --glow:#182839; --glow-secondary:#172a30;
+  --shadow-panel:0 1px 2px #0003,0 10px 32px #0002;
+  --shadow-button:0 1px 2px #0004;
 }
 @media (max-width: 760px) {
   :root { --type-title:1.625rem; --leading-title:2.125rem; --type-display:2.25rem; --leading-display:2.625rem; }

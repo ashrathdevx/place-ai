@@ -45,17 +45,27 @@ const route = location.pathname.replace(/\/$/, '') || '/';
 const navigation = [['/learn','Learn'],['/practice','Practice'],['/placements','Placements'],['/arena','Arena'],['/marketplace','Marketplace'],['/proof','Evidence Engine']];
 const brand = `<a class="brand" href="/" aria-label="Place AI home"><img src="/assets/mark.svg" alt="" width="33" height="33"> Place<span>AI</span></a>`;
 const nav = navigation.map(([link,label]) => `<a href="${link}" ${route === link || (route.startsWith(link + '/') && !navigation.some(([candidate]) => candidate !== link && (route === candidate || route.startsWith(candidate + '/')))) ? 'aria-current="page"' : ''}>${label}</a>`).join('');
-document.querySelector('#header').innerHTML = `<div class="wrap header-inner">${brand}<nav id="nav" aria-label="Main navigation">${nav}</nav><a href="/profile" class="button small header-cta" ${route.startsWith('/profile') ? 'aria-current="page"' : ''}>Skill Passport</a><label class="theme-control"><span class="sr-only">Theme</span><select id="site-theme" aria-label="Theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label><button id="menu" class="button small secondary" type="button" aria-expanded="false" aria-controls="nav">Menu</button></div>`;
-const themeControl = document.querySelector('#site-theme');
+const header = document.querySelector('#header');
+header.innerHTML = `<div class="wrap header-inner">${brand}<nav id="nav" aria-label="Main navigation">${nav}</nav>
+  <div class="header-actions"><a href="/profile" class="button small header-cta" ${route.startsWith('/profile') ? 'aria-current="page"' : ''}>${icon('shield')}<span>Skill Passport</span></a>
+  <button id="menu" class="button small secondary" type="button" aria-expanded="false" aria-controls="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M5 8h14M5 16h14"/></svg><span>Menu</span></button>
+  <label class="theme-control"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18z" fill="currentColor"/><circle cx="12" cy="12" r="9"/></svg><select id="site-theme" aria-label="Theme" title="Appearance"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label></div></div>`;
+const themeControl = header.querySelector('#site-theme');
 themeControl.value = themePreference();
 themeControl.onchange = () => setTheme(themeControl.value);
 window.addEventListener('place-theme',() => { themeControl.value = themePreference(); });
-document.querySelector('#menu').onclick = event => {
-  const open = event.currentTarget.getAttribute('aria-expanded') === 'true';
-  event.currentTarget.setAttribute('aria-expanded', String(!open));
-  document.querySelector('#nav').classList.toggle('open', !open);
+const menuButton = header.querySelector('#menu');
+const setMenuOpen = open => {
+  menuButton.setAttribute('aria-expanded',String(open));
+  header.querySelector('#nav').classList.toggle('open',open);
 };
-document.querySelector('#footer').innerHTML = `<div class="wrap footer-inner">${brand}<p>From your first semester to your first role.</p><a href="/proof/demo">Sample Skill Passport</a></div>`;
+menuButton.onclick = () => setMenuOpen(menuButton.getAttribute('aria-expanded') !== 'true');
+header.addEventListener('keydown',event => {
+  if (event.key !== 'Escape' || menuButton.getAttribute('aria-expanded') !== 'true') return;
+  setMenuOpen(false);
+  menuButton.focus();
+});
+document.querySelector('#footer').innerHTML = `<div class="wrap footer-inner">${brand}<p>Learn, practise, and show your work.</p><a href="/proof/demo">Sample Skill Passport</a></div>`;
 
 const action = (link, label, style = '') => `<a class="button ${style}" href="${link}">${label}</a>`;
 const sectionIntro = (label, title, text) => `<div class="page-intro"><p class="eyebrow">${label}</p><h1>${title}</h1><p class="lede">${text}</p></div>`;

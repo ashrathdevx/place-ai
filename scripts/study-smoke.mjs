@@ -44,11 +44,24 @@ try {
   for (const theme of ['light','dark']) {
     await page.getByLabel('Theme',{exact:true}).selectOption(theme);
     assert.equal(await page.locator('html').getAttribute('data-theme'),theme);
-    for (const width of [360,768,1024,1440]) {
+    for (const width of [320,360,768,851,1024,1440]) {
       await page.setViewportSize({width,height:900});
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),`Landing overflow at ${width}px in ${theme}`);
     }
   }
+  await page.setViewportSize({width:320,height:900});
+  await button('Menu').press('Enter');
+  assert.equal(await button('Menu').getAttribute('aria-expanded'),'true');
+  await button('Menu').press('Escape');
+  assert.equal(await button('Menu').getAttribute('aria-expanded'),'false');
+  assert.deepEqual(await page.getByLabel('Theme',{exact:true}).locator('option').allTextContents(),['System','Light','Dark']);
+  await go('/practice');
+  await heading('Find your next problem.').waitFor();
+  assert.equal(await page.locator('html').getAttribute('data-theme'),'dark');
+  await page.setViewportSize({width:851,height:900});
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  await go('/');
+  await page.setViewportSize({width:1440,height:900});
   await page.getByLabel('Theme',{exact:true}).selectOption('system');
   await link('Start learning').click();
   await module.waitFor();
