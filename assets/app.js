@@ -1,4 +1,4 @@
-import { setTheme, themePreference } from './theme.js';
+import { setTheme, systemTheme, themePreference } from './theme.js';
 import { cseTrack, challengeUrl, continueStudy, moduleProgress } from './study-plan.js';
 import { practiceState, rememberLesson, reviewReason, studyProgress, updatePractice } from './practice-state.js';
 import { watchArenaProgress } from './live-progress.js';
@@ -49,11 +49,14 @@ const header = document.querySelector('#header');
 header.innerHTML = `<div class="wrap header-inner">${brand}<nav id="nav" aria-label="Main navigation">${nav}</nav>
   <div class="header-actions"><a href="/profile" class="button small header-cta" ${route.startsWith('/profile') ? 'aria-current="page"' : ''}>${icon('shield')}<span>Skill Passport</span></a>
   <button id="menu" class="button small secondary" type="button" aria-expanded="false" aria-controls="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M5 8h14M5 16h14"/></svg><span>Menu</span></button>
-  <label class="theme-control"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18z" fill="currentColor"/><circle cx="12" cy="12" r="9"/></svg><select id="site-theme" aria-label="Theme" title="Appearance"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label></div></div>`;
+  <label class="theme-control"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18z" fill="currentColor"/><circle cx="12" cy="12" r="9"/></svg><select id="site-theme" aria-label="Theme" title="Appearance"><option value="system">System · ${systemTheme()}</option><option value="light">Light</option><option value="dark">Dark</option></select></label></div></div>`;
 const themeControl = header.querySelector('#site-theme');
 themeControl.value = themePreference();
 themeControl.onchange = () => setTheme(themeControl.value);
-window.addEventListener('place-theme',() => { themeControl.value = themePreference(); });
+window.addEventListener('place-theme',() => {
+  themeControl.value = themePreference();
+  themeControl.options[0].textContent = 'System · '+systemTheme();
+});
 const menuButton = header.querySelector('#menu');
 const setMenuOpen = open => {
   menuButton.setAttribute('aria-expanded',String(open));
@@ -240,7 +243,7 @@ function learn() {
 
 function practice() {
   main.innerHTML = `<div class="wrap page practice-page">
-    <div class="practice-banner"><div><p class="eyebrow">Practice</p><h1>Find your next problem.</h1><p class="lede">Work through short challenges by branch or open the Arena for judged coding problems.</p></div>${action('/arena','Open Coding Arena')}</div>
+    <div class="practice-banner"><div><p class="eyebrow">Practice</p><h1>Practice challenges</h1><p class="lede">Practice short questions by branch, or open Arena to submit code to the judge.</p></div>${action('/arena','Open Coding Arena')}</div>
     <div class="practice-grid"><section class="panel practice-library" aria-labelledby="challenge-title">
       <div class="practice-controls"><h2 id="challenge-title">Challenge library</h2>
         <div class="practice-filters"><label>Search<input type="search" id="practice-search" placeholder="Search challenges"></label>
@@ -534,7 +537,7 @@ const pages = {
   '/marketplace': ['Student Marketplace', marketplace],
   '/proof': ['Evidence Engine', proof],
   '/proof/demo': ['Synexis · Sample Skill Passport', samplePassport],
-  '/profile': ['My profile', profile],
+  '/profile': ['Engineering Passport', profile],
   '/profile/edit': ['Profile settings', () => openProfileSettings(main,state,profileUI,save)],
 };
 const [title, render] = pages[route] ?? pages['/'];

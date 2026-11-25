@@ -4,7 +4,7 @@ import { AnimatePresence,MotionConfig,motion } from 'framer-motion';
 import './typography.css';
 import { Monaco, diagnosticLocation } from './editor.jsx';
 import { catalogSearch,problemHref,selectChallenges } from './navigation.js';
-import { setTheme,themePreference } from '../assets/theme.js';
+import { setTheme,systemTheme,themePreference } from '../assets/theme.js';
 import './workspace.css';
 import { cseTrack } from '../assets/study-plan.js';
 import { hasDraft, practiceState, recordHint, recordVerdict, rememberLesson, reviewReason, updatePractice } from '../assets/practice-state.js';
@@ -39,9 +39,10 @@ const brand = <a href="/" className="brand" aria-label="Place AI home"><img src=
 function Header({ compact = false }) {
   const [menu,setMenu] = useState(false);
   const [theme,setPreference] = useState(themePreference);
+  const [systemAppearance,setSystemAppearance] = useState(systemTheme);
   const arenaActive = !compact;
   useEffect(() => {
-    const sync = () => setPreference(themePreference());
+    const sync = () => { setPreference(themePreference()); setSystemAppearance(systemTheme()); };
     window.addEventListener('place-theme',sync);
     return () => window.removeEventListener('place-theme',sync);
   },[]);
@@ -58,7 +59,7 @@ function Header({ compact = false }) {
     <div className="arena-header-actions">
       <button type="button" className="button secondary small arena-menu-button" aria-controls="arena-navigation" aria-expanded={menu} onClick={() => setMenu(!menu)}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true"><path d="M5 8h14M5 16h14"/></svg><span>Menu</span></button>
       <label className="theme-control"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18z" fill="currentColor"/><circle cx="12" cy="12" r="9"/></svg><select aria-label="Theme" title="Appearance" value={theme} onChange={event => setTheme(event.target.value)}>
-        <option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option>
+        <option value="system">System · {systemAppearance}</option><option value="light">Light</option><option value="dark">Dark</option>
       </select></label>
     </div>
   </div></header>;

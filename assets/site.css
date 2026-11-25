@@ -381,7 +381,7 @@ label { color:var(--text); }
   .landing-example-header, .landing-example-body, .landing-example-link { padding-inline: var(--space-4); }
   .landing-step, .landing-detail { padding: var(--space-4); }
 }
-@media (761px <= width <= 960px) {
+@media (761px <= width <= 1020px) {
   .header-inner { min-height: 64px; }
   .header-inner .header-cta { margin-left: auto; }
   .header-inner #menu { display: inline-flex; min-height: 44px; }
@@ -572,4 +572,95 @@ dialog::backdrop { backdrop-filter: blur(6px); }
 .study-links a:hover { text-decoration: underline; }
 @media (min-width: 900px) {
   .study-list { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+
+/* Engineering Passport */
+.profile-page { max-width: 1180px; }
+.passport-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.passport-title p { margin-top: 4px; }
+.profile-header { align-items: center; grid-template-columns: auto minmax(0,1fr); }
+.profile-header .avatar { width: 72px; height: 72px; }
+.profile-identity h2 { font-size: var(--type-panel-title); overflow-wrap: anywhere; }
+.profile-page .passport-layout {
+  display: grid;
+  grid-template-columns: minmax(132px,.65fr) minmax(0,4fr);
+  align-items: start;
+  gap: var(--space-4);
+}
+.profile-page .profile-nav {
+  display: grid;
+  padding: var(--space-2);
+  margin: 0;
+  gap: 2px;
+  border: 1px solid var(--border);
+  background: var(--glass);
+}
+.profile-page .profile-nav a {
+  padding: 10px 12px;
+  border-radius: var(--control-radius);
+  text-decoration: none;
+}
+.profile-page .profile-nav a:hover,
+.profile-page .profile-nav a[aria-current=location] {
+  background: var(--subtle);
+  color: var(--blue);
+}
+.passport-dashboard, .passport-dashboard-grid { display: grid; gap: var(--space-4); }
+.passport-dashboard-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.passport-dashboard-grid > .panel { min-width: 0; }
+.passport-recent { grid-column: 1/-1; }
+.passport-summary .stats { margin: 0; padding: var(--space-3); grid-template-columns: repeat(4,minmax(0,1fr)); }
+.passport-summary .stats > div { border-color: var(--border); }
+.passport-summary strong { font-variant-numeric: tabular-nums; }
+.passport-next { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.passport-next .button, #passport-track { margin: 0; }
+.passport-dashboard #passport-decode { margin: 0; border: 1px solid var(--border); }
+.passport-dashboard #passport-decode progress { margin: var(--space-3) 0; height: 7px; }
+.passport-language-list, .passport-achievement-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.passport-language-list li, .passport-achievement-list li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px var(--space-2);
+  padding: 7px 10px;
+  border-radius: var(--control-radius);
+  background: var(--subtle);
+  font-size: var(--type-compact);
+}
+.passport-language-list span, .passport-achievement-list span, .pass-chart-caption { color: var(--muted); font-size: var(--type-label); }
+.passport-chart {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(8,minmax(0,1fr));
+  gap: 5px;
+}
+.passport-chart li { display: grid; grid-template-rows: auto 56px auto; gap: 3px; text-align: center; font-size: .7rem; }
+.passport-chart-track { display: flex; align-items: end; background: var(--subtle); border-radius: 5px; }
+.passport-chart-track > span { width: 100%; height: var(--bar-size); border-radius: 5px; background: var(--blue); }
+.passport-chart time { color: var(--muted); }
+.profile-page #skills > .panel + .panel { margin-top: var(--space-3); }
+@media (max-width: 850px) {
+  .profile-page .passport-layout { grid-template-columns: 1fr; }
+  .profile-page .profile-nav { display: flex; }
+}
+@media (max-width: 640px) {
+  .passport-dashboard-grid { grid-template-columns: 1fr; }
+  .passport-summary .stats { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .profile-header .avatar { width: 54px; height: 54px; }
+  .profile-page .profile-nav a { padding-inline: 9px; }
 }

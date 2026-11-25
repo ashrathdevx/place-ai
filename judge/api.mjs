@@ -182,6 +182,7 @@ export async function handle(req,res,path) {
         (SELECT count(*)::int FROM problems WHERE kind='decode') AS decode_total,
         count(DISTINCT problem_id) FILTER (WHERE verdict='AC' AND language='python')::int AS python,
         count(DISTINCT problem_id) FILTER (WHERE verdict='AC' AND language='cpp')::int AS cpp,
+        count(DISTINCT problem_id) FILTER (WHERE verdict='AC' AND language='c')::int AS c,
         count(*) FILTER (WHERE verdict='AC')::int AS accepted,
         count(*) FILTER (WHERE verdict IN ('AC','WA','CE','RE','TLE','MLE'))::int AS graded
         FROM submissions s JOIN problems p ON p.id=s.problem_id WHERE s.user_id=$1 AND s.custom_input IS NULL`,[user]);
